@@ -7,5 +7,7 @@ class ExampleTask(Task):
 
 
     def _execute(self):
-        print("executing")
+        f = open("asd.txt", "w")
+        f.write("done")
+        f.close
         self.share_next("key", "value")
