@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from .models import Task, Pipeline
+from datatransform.model_to_pipeline import model_to_pipeline
 
 # Create your views here.
 
@@ -51,15 +52,15 @@ def pipe_create(request):
         p_id = p.pk        
 
         
-        for index, each in enumerate(transformers_list):
+        for _, each in enumerate(transformers_list):
             task_name      = each.get('name', None)
             task_order_no  = each.get('order_no', None)
             task_context   = each.get('context', None)
 
 
             p = Pipeline.objects.get(pk=p_id)
-            t = p.task_set.create(task_name=task_name, status="None", order_no=task_order_no, context=task_context)
-
+            p.task_set.create(task_name=task_name, status="None", order_no=task_order_no, context=task_context)
+            model_to_pipeline(p)
         context = {"result" : p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
