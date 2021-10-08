@@ -6,7 +6,7 @@ module = "tasks.example_task.ExampleTask"
 task = __import__(module)
 
 
-async def model_to_pipeline(pipeline: Pipeline):
+async def model_to_pipeline(p: Pipeline):
     try:
         new_pipeline = pipeline.Pipeline()
         new_pipeline.add(task.ExampleTask())
