@@ -1,0 +1,11 @@
+POST http://127.0.0.1:8000/transformer/pipe_create HTTP/1.1
+content-type: application/json
+
+{
+  "data_url" : "test",
+  "transformers_list" : [{"name" : "skip_column", "order_no" : 1, "context": {"columns":["col1", "col2"]}},
+                        {"name" : "skip_column", "order_no" : 1, "context": {"columns":["col3", "col4"]}}]
+}
+
+
+###
