@@ -1,10 +1,8 @@
-from django.shortcuts import render
 from .models import Task, Pipeline
-from datatransform.model_to_pipeline import model_to_pipeline
+from pipeline.model_to_pipeline import model_to_pipeline
 
 # Create your views here.
 
-from django.http import HttpResponse
 from django.http import JsonResponse
 import pandas as pd
 import json
@@ -55,7 +53,7 @@ def pipe_create(request):
 
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="None", order_no=task_order_no, context=task_context)
-        model_to_pipeline(p)
+        model_to_pipeline(p_id)
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
