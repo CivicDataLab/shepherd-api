@@ -17,8 +17,11 @@ class Task(models.Model):
     context        = models.CharField(max_length=500)
     status         = models.CharField(max_length=50)
     order_no       = models.IntegerField()
+    created_at     = models.DateTimeField(default=datetime.datetime.now)
+    result_url     = models.CharField(max_length=500)
     Pipeline_id    = models.ForeignKey(Pipeline, on_delete=models.CASCADE)
 
+    
 
 
 

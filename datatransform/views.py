@@ -11,8 +11,14 @@ import json
 
 def transformer_list(request):
 
-    transformers = [{"name" : "skip_column", "context": {"columns":"list_of_strings"}},
-                    {"name" : "merge_columns", "context": {"column1": "string", "column2":"string", "output_column": "string"}}]
+    transformers = [
+                    {"name" : "skip_column", "context":  [{"name":"column", "type":"string", "desc":"Please enter comma separated column names to be deleted"}]},
+                    {"name" : "merge_columns", "context": [
+                                                                {"name":"column1", "type":"string", "desc":"Please enter first column name"}, 
+                                                                {"name":"column2", "type":"string", "desc":"Please enter second column name"},
+                                                                {"name":"output_column", "type":"string", "desc":"Please enter output column name"}
+                                                          ]}
+                    ]
 
     context = {"result" : transformers, "Success": True}
         
@@ -20,9 +26,17 @@ def transformer_list(request):
 
 def pipe_list(request):
 
-    task_data  = Task.objects.all().values()
+    task_data  = list(Task.objects.all().values())
 
-    context = {"result" : list(task_data), "Success": True}
+    data = {}
+    for each in task_data:
+        if each['Pipeline_id_id'] not in data:
+            data[each['Pipeline_id_id']] = {'date': each['created_at'], 'pipeline':[{"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":each['result_url']}]}
+        else: 
+            data[each['Pipeline_id_id']]['pipeline'].append({"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":each['result_url']})
+
+
+    context = {"result" : data, "Success": True}
 
     return JsonResponse(context, safe=False)
 
@@ -58,7 +72,7 @@ def pipe_create(request):
 
 
             p = Pipeline.objects.get(pk=p_id)
-            t = p.task_set.create(task_name=task_name, status="None", order_no=task_order_no, context=task_context)
+            t = p.task_set.create(task_name=task_name, status="Not Started", order_no=task_order_no, context=task_context)
 
         context = {"result" : p_id, "Success": True}
         return JsonResponse(context, safe=False)
