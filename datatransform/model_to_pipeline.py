@@ -2,8 +2,6 @@ from .models import Task, Pipeline
 from concurrent.futures import ThreadPoolExecutor
 from pipeline import pipeline
 
-# module = "tasks.example_task.ExampleTask"
-# task = __import__(module)
 
 mod = __import__('tasks.example_task', fromlist=['ExampleTask'])
 klass = getattr(mod, 'ExampleTask')

@@ -55,7 +55,7 @@ def pipe_create(request):
 
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="None", order_no=task_order_no, context=task_context)
-            model_to_pipeline(p)
+        model_to_pipeline(p)
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
