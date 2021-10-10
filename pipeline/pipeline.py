@@ -3,8 +3,9 @@ from datatransform import models
 
 
 class Pipeline(object):
-    def __init__(self, model: models.Pipeline):
+    def __init__(self, model: models.Pipeline, data: pd.DataFrame):
         self.model = model
+        self.data = data
         self._commands = list()
 
     def add(self, command: Task):

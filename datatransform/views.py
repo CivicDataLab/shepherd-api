@@ -38,7 +38,7 @@ def pipe_create(request):
         data_url = post_data.get('data_url', None)
 
         print(data_url, transformers_list)
-        # data = read_data(data_url)
+        data = read_data(data_url)
         transformers_list = [i for i in transformers_list if i]
 
         p = Pipeline(status="started")
@@ -53,7 +53,7 @@ def pipe_create(request):
 
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="None", order_no=task_order_no, context=task_context)
-        model_to_pipeline(p_id)
+        model_to_pipeline(p_id, data)
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
