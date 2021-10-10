@@ -44,17 +44,18 @@ def upload_resource(res_dict):
 
     # Create Resource
     try:
-        package = ckan.action.resource_create(package_id=package_id, name=resource_name, 
+        resource = ckan.action.resource_create(package_id=package_id, name=resource_name, 
                                                 upload=open(file_path, 'rb'))
+        return resource.id
     except ckanapi.ValidationError as e:
         print(e)                                             
 
 
 def main():
 
-    pkg_dict = {'pkg_name': 'test2', 'pkg_title': 'test2', 'owner_org': 'test'}
+    # pkg_dict = {'pkg_name': 'test2', 'pkg_title': 'test2', 'owner_org': 'test'}
 
-    upload_dataset(pkg_dict)    
+    # upload_dataset(pkg_dict)    
 
     data = [['tom', 10], ['nick', 15], ['juli', 14]]
  
@@ -62,7 +63,7 @@ def main():
     df = pd.DataFrame(data, columns = ['Name', 'Age'])
  
 
-    res_dict = {'package_id': 'test2', 'resource_name': 'test10', 'data': df}
+    res_dict = {'package_id': 'test2', 'resource_name': 'test12', 'data': df}
 
     upload_resource(res_dict)
 
