@@ -17,7 +17,7 @@ def model_to_pipeline(pipeline_id, data: pd.DataFrame):
 
         def execution_from_model(task):
             klass = getattr(mod, settings.tasks[task.task_name])
-            new_pipeline.add(klass())
+            new_pipeline.add(klass(task))
 
         [execution_from_model(task) for task in tasks]
         # new_pipeline.execute()
