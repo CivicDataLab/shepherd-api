@@ -1,3 +1,5 @@
+import pandas as pd
+
 from pipeline.task import Task
 from datatransform import models
 
@@ -16,5 +18,8 @@ class Pipeline(object):
 
     def execute(self):
         self.model.status = 'In Progress'
+        self.model.save()
+        self._commands[0].set_data(self.data)
         self._commands[0].execute_chain()
+        self.model.status = "Done"
         self.model.save()
