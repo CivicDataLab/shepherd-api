@@ -1,0 +1,6 @@
+{
+    "tasks": {
+        "merge_columns": "MergeColumns",
+        "skip_column": "SkipColumn"
+    }
+}

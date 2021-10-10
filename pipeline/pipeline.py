@@ -1,8 +1,10 @@
 from pipeline.task import Task
+from datatransform import models
 
 
 class Pipeline(object):
-    def __init__(self):
+    def __init__(self, model: models.Pipeline):
+        self.model = model
         self._commands = list()
 
     def add(self, command: Task):
@@ -12,4 +14,6 @@ class Pipeline(object):
         return self
 
     def execute(self):
+        self.model.status = 'In Progress'
         self._commands[0].execute_chain()
+        self.model.save()

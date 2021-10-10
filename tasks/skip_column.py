@@ -1,7 +1,7 @@
 from pipeline.task import Task
 
 
-class ExampleTask(Task):
+class SkipColumn(Task):
     def __init__(self, model):
         super().__init__(model)
 
