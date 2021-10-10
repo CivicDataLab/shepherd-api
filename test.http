@@ -3,6 +3,7 @@ content-type: application/json
 
 {
   "data_url" : "https://justicehub.in/dataset/a51492b5-58ba-471e-94d1-8064c2d92238/resource/6dba3a17-384a-49c4-8ed6-bdfea9ea47e3/download/summer-of-data-meghalaya-high-court-datasheet.csv",
+  "name": "Test pipeline",
   "transformers_list" : [{"name" : "skip_column", "order_no" : 1, "context": {"columns":["Gender", "Religion"]}},
                         {"name" : "skip_column", "order_no" : 1, "context": {"columns":["Caste"]}}]
 }

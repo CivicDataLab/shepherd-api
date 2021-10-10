@@ -1,7 +1,7 @@
 import abc
 
 import pandas as pd
-
+from utils import upload_resource
 
 class Task(abc.ABC):
 
@@ -29,6 +29,7 @@ class Task(abc.ABC):
             self.model.save()
             raise e
         # TODO: Upload to CKAN
+
         self.model.status = "Done"
         self.model.save()
         self.execute_next()
