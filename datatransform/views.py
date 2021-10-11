@@ -6,7 +6,9 @@ from pipeline.model_to_pipeline import model_to_pipeline
 from django.http import JsonResponse
 import pandas as pd
 import json
+import uuid
 from utils import upload_dataset
+
 
 def transformer_list(request):
     transformers = [{"name": "skip_column", "context": {"columns": "list_of_strings"}},
@@ -29,22 +31,21 @@ def pipe_list(request):
 def pipe_create(request):
     if request.method == 'POST':
 
-        print("enter")
-        print(request.body)
+        # print("enter")
+        # print(request.body)
 
         post_data = json.loads(request.body.decode('utf-8'))
-        print(post_data)
+        # print(post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         pipeline_name = post_data.get('name', '')
 
-        print(data_url, transformers_list)
+        # print(data_url, transformers_list)
         data = read_data(data_url)
         transformers_list = [i for i in transformers_list if i]
-      
 
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
-        
+
         p.output_id = upload_dataset(pipeline_name)
         p.save()
 
@@ -57,7 +58,9 @@ def pipe_create(request):
 
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
-        model_to_pipeline(p_id, data)
+        temp_file_name = uuid.uuid4().hex
+        data.to_pickle(temp_file_name)
+        model_to_pipeline(p_id, temp_file_name)
         context = {"result": p_id, "Success": True}
 
         return JsonResponse(context, safe=False)

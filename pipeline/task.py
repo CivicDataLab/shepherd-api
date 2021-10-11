@@ -29,7 +29,7 @@ class Task(abc.ABC):
             self.model.status = "Failed with error:" + e.message
             self.model.save()
             raise e
-        print({'package_id': self.pipeline_out, 'resource_name': self.model.task_name, 'data': self.data})
+        # print({'package_id': self.pipeline_out, 'resource_name': self.model.task_name, 'data': self.data})
         self.model.output_id = upload_resource({'package_id': self.pipeline_out, 'resource_name': self.model.task_name, 'data': self.data})
 
         self.model.status = "Done"

@@ -11,6 +11,7 @@ class Pipeline(object):
         self._commands = list()
 
     def add(self, command: Task):
+        command.set_pipeline_out(self.model.output_id)
         if len(self._commands) != 0:
             self._commands[-1].add_next(command)
         self._commands.append(command)

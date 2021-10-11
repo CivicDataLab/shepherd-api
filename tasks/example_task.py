@@ -8,6 +8,6 @@ class ExampleTask(Task):
     def _execute(self):
         f = open("asd.txt", "w")
         f.write("done")
-        print("asdasd")
+        # print("asdasd")
         f.close()
         self.share_next("key", "value")
