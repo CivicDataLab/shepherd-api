@@ -7,7 +7,7 @@ class Task(abc.ABC):
 
     def __init__(self, model):
         self.next_task = None
-        self.data = None
+        self.data: pd.DataFrame = pd.DataFrame()
         self.model = model
         self.shared_resources = {}
 
