@@ -34,11 +34,14 @@ def pipe_list(request):
     data = {}
     for each in task_data:
         if each['Pipeline_id_id'] not in data:
-            data[each['Pipeline_id_id']] = {'date': each['created_at'], 'pipeline':[{"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":each['result_url']}]}
+            p = Pipeline.objects.get(pk=each['Pipeline_id_id'])
+            data[each['Pipeline_id_id']] = {'date': each['created_at'], 'status': p.status, 'pipeline':[{"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":each['result_url']}]}
         else: 
             data[each['Pipeline_id_id']]['pipeline'].append({"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":each['result_url']})
+        
+        
 
-
+         
     context = {"result" : data, "Success": True}
 
     return JsonResponse(context, safe=False)
