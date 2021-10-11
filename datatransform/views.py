@@ -11,12 +11,9 @@ from utils import upload_dataset
 
 
 def transformer_list(request):
-    transformers = [{"name": "skip_column", "context": {"columns": "list_of_strings"}},
-                    {"name": "merge_columns",
-                     "context": {"column1": "string", "column2": "string", "output_column": "string"}}]
 
     transformers = [
-                    {"name" : "skip_column", "context":  [{"name":"column", "type":"string", "desc":"Please enter comma separated column names to be deleted"}]},
+                    {"name" : "skip_column", "context":  [{"name":"columns", "type":"string", "desc":"Please enter comma separated column names to be deleted"}]},
                     {"name" : "merge_columns", "context": [
                                                                 {"name":"column1", "type":"string", "desc":"Please enter first column name"}, 
                                                                 {"name":"column2", "type":"string", "desc":"Please enter second column name"},
