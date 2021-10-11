@@ -2,12 +2,9 @@ from pipeline.task import Task
 
 
 class SkipColumn(Task):
-    def __init__(self, model):
+    def __init__(self, model, columns):
         super().__init__(model)
+        self.columns = columns
 
     def _execute(self):
-        f = open("asd.txt", "w")
-        f.write("done")
-        print("asdasd")
-        f.close()
-        self.share_next("key", "value")
+        self.data = self.data.drop(self.columns, axis=1)
