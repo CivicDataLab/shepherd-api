@@ -10,3 +10,4 @@ typing-extensions==3.10.0.2
 simple-config==1.0.1
 django-background-tasks==1.2.5
 ckanapi==4.6
+django-cors-headers==3.10.0 
