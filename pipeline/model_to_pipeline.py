@@ -4,6 +4,7 @@ from datatransform.models import Task, Pipeline
 from concurrent.futures import ThreadPoolExecutor
 from pipeline import pipeline
 from config import settings
+import json
 
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
@@ -17,7 +18,8 @@ def model_to_pipeline(pipeline_id, data: pd.DataFrame):
 
         def execution_from_model(task):
             klass = getattr(mod, settings.tasks[task.task_name])
-            new_pipeline.add(klass(task))
+            context = json.loads(task.context.replace('\'', '"'))
+            new_pipeline.add(klass(task, **context))
 
         [execution_from_model(task) for task in tasks]
         # new_pipeline.execute()
