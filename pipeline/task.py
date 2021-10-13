@@ -3,6 +3,7 @@ import abc
 import pandas as pd
 from utils import upload_resource
 
+
 class Task(abc.ABC):
 
     def __init__(self, model):
@@ -30,7 +31,8 @@ class Task(abc.ABC):
             self.model.save()
             raise e
         # print({'package_id': self.pipeline_out, 'resource_name': self.model.task_name, 'data': self.data})
-        self.model.output_id = upload_resource({'package_id': self.pipeline_out, 'resource_name': self.model.task_name, 'data': self.data})
+        self.model.output_id = upload_resource(
+            {'package_id': self.pipeline_out, 'resource_name': self.model.task_name, 'data': self.data})
 
         self.model.status = "Done"
         self.model.save()
@@ -43,7 +45,7 @@ class Task(abc.ABC):
         if self.next_task is not None:
             self.next_task._set_shared_resource(key, resource)
         return
-    
+
     def set_pipeline_out(self, id):
         self.pipeline_out = id
 
