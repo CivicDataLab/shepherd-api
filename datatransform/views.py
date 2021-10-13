@@ -17,7 +17,8 @@ def transformer_list(request):
                     {"name" : "merge_columns", "context": [
                                                                 {"name":"column1", "type":"string", "desc":"Please enter first column name"}, 
                                                                 {"name":"column2", "type":"string", "desc":"Please enter second column name"},
-                                                                {"name":"output_column", "type":"string", "desc":"Please enter output column name"}
+                                                                {"name":"output_column", "type":"string", "desc":"Please enter output column name"},
+                                                                {"name":"separator", "type":"string", "desc":"Please enter separator char/string"}
                                                           ]}
                     ]
 
