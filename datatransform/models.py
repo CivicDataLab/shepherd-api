@@ -1,4 +1,3 @@
-from os import name, stat_result
 from django.db import models
 import datetime
 
