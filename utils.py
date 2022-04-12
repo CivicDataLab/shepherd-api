@@ -8,14 +8,14 @@ owner_org = settings.CKANOrg
 
 ckan = ckanapi.RemoteCKAN(settings.CKANUrl, apikey=APIKEY)
 
-def upload_dataset(name):
+def upload_dataset(name, org_name):
     pkg_name = name.replace(" ", "_").lower().replace("’", "").replace("–", '-').replace(',', "-").replace(":", "--").replace("?", "").replace("&amp;", "-").replace("(", "").replace(")", "").replace("&", "-").replace(".", "").replace("'", "")[:100]
     pkg_title =name
 
     # Create Package
     try:
         package = ckan.action.package_create(name=pkg_name,
-                                         title=pkg_title, owner_org=owner_org)
+                                         title=pkg_title, owner_org=org_name)
 
         return package['id']
 

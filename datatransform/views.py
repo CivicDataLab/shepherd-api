@@ -57,6 +57,7 @@ def pipe_create(request):
         # print(post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
+        org_name = post_data.get('org_name', None)
         pipeline_name = post_data.get('name', '')
 
         # print(data_url, transformers_list)
@@ -65,7 +66,7 @@ def pipe_create(request):
 
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
-        p.output_id = upload_dataset(pipeline_name)
+        p.output_id = upload_dataset(pipeline_name, org_name)
         p.save()
 
         p_id = p.pk
