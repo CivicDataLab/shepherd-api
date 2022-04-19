@@ -1,0 +1,25 @@
+,Grants-in-aid to Union Territory Governments
+0,"This scheme category includes grants-in-aid under centrally sponsored schemes, fianace commission grants and other transfer/grants to union territory governments with legislatures."
+1,Department of Police
+2,Open Budgets India (URL: https://openbudgetsindia.org)
+3,Yearly
+4,Budget Estimates
+5,The amount of money allocated in the Budget for a particular fiscal year to any ministry or scheme.
+6,INR (Crores)
+7,
+8,Revised Estimates
+9,"A mid-year evaluation of potential expenditures that take into account spending trends, new services, and new instruments of services, among other things."
+10,INR (Crores)
+11,
+12,Actual Expenditure
+13,"The amount of money spent in a particular fiscal year on ministry,  department or scheme. "
+14,INR (Crores)
+15,
+16,Actual Expenditure as a % of Department 
+17,It is a ratio of Actual Expenditure and sum of actual expenditure of all schemes under Department of Police. [Actual Expenditure  as a share of of Expenditure of Department of Police = (Actual Expenditure / Sum of actual expenditure under Department of Police)*100]
+18,%
+19,
+20,Fund Utilisation
+21,It is a ratio of Actual Expenditure and Revised Estimate. The revised estimates being the proxy to funds disburssed and actual expenditure being the funds being used. [Fund Utilisation = (Actual Expenditure / Revised Estimates)*100]
+22,%
+23,
