@@ -32,7 +32,7 @@ def pipe_list(request):
     data = {}
     for each in task_data:
         p = Pipeline.objects.get(pk=each['Pipeline_id_id'])
-        res_url = "http://65.0.11.237/dataset/" + p.output_id + "/resource/" + each['output_id']
+        res_url = "https://ndp.ckan.civicdatalab.in/dataset/" + p.output_id + "/resource/" + each['output_id']
 
         if each['Pipeline_id_id'] not in data:
             data[each['Pipeline_id_id']] = {'date': each['created_at'], 'status': p.status, 'name': p.pipeline_name,  'pipeline':[{"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":res_url}]}
