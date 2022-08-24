@@ -25,12 +25,20 @@ SECRET_KEY = 'django-insecure-3+2$eq9d(6o(u^@u9*&5!a_#t6(5h&+jf2w%(e!hw!4_b-qm7v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['13.232.239.70', '127.0.0.1', 'pipeline.ndp.civicdatalab.in']
+# ALLOWED_HOSTS = ['13.232.239.70', '127.0.0.1', 'pipeline.ndp.civicdatalab.in', 'localhost']
+ALLOWED_HOSTS = ['*']
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_WHITELIST = (
+       'http://localhost:3000',
+)
+
+CORS_ALLOW_HEADERS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
                            'http://13.232.239.70:3000/',
+                           'http://localhost:3000/',
+                           'http://127.0.0.1:3000/',
                         ]
 
 # Application definition

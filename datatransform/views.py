@@ -11,23 +11,23 @@ from utils import upload_dataset
 
 
 def transformer_list(request):
-
     transformers = [
-                    {"name" : "skip_column", "context":  [{"name":"columns", "type":"string", "desc":"Please enter comma separated column names to be deleted"}]},
-                    {"name" : "merge_columns", "context": [
-                                                                {"name":"column1", "type":"string", "desc":"Please enter first column name"}, 
-                                                                {"name":"column2", "type":"string", "desc":"Please enter second column name"},
-                                                                {"name":"output_column", "type":"string", "desc":"Please enter output column name"},
-                                                                {"name":"separator", "type":"string", "desc":"Please enter separator char/string"}
-                                                          ]}
-                    ]
+        {"name": "skip_column", "context": [
+            {"name": "columns", "type": "string", "desc": "Please enter comma separated column names to be deleted"}]},
+        {"name": "merge_columns", "context": [
+            {"name": "column1", "type": "string", "desc": "Please enter first column name"},
+            {"name": "column2", "type": "string", "desc": "Please enter second column name"},
+            {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
+            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
+        ]}
+    ]
 
     context = {"result": transformers, "Success": True}
     return JsonResponse(context, safe=False)
 
+
 def pipe_list(request):
-    
-    task_data  = list(Task.objects.all().values())
+    task_data = list(Task.objects.all().values())
 
     data = {}
     for each in task_data:
@@ -35,14 +35,14 @@ def pipe_list(request):
         res_url = "https://ndp.ckan.civicdatalab.in/dataset/" + p.output_id + "/resource/" + each['output_id']
 
         if each['Pipeline_id_id'] not in data:
-            data[each['Pipeline_id_id']] = {'date': each['created_at'], 'status': p.status, 'name': p.pipeline_name,  'pipeline':[{"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":res_url}]}
-        else: 
-            data[each['Pipeline_id_id']]['pipeline'].append({"name":each['task_name'], "step": each['order_no'], "status":each['status'], "result":res_url})
-        
-        
+            data[each['Pipeline_id_id']] = {'date': each['created_at'], 'status': p.status, 'name': p.pipeline_name,
+                                            'pipeline': [{"name": each['task_name'], "step": each['order_no'],
+                                                          "status": each['status'], "result": res_url}]}
+        else:
+            data[each['Pipeline_id_id']]['pipeline'].append(
+                {"name": each['task_name'], "step": each['order_no'], "status": each['status'], "result": res_url})
 
-         
-    context = {"result" : data, "Success": True}
+    context = {"result": data, "Success": True}
 
     return JsonResponse(context, safe=False)
 
@@ -61,12 +61,16 @@ def pipe_create(request):
         pipeline_name = post_data.get('name', '')
 
         # print(data_url, transformers_list)
-        data = read_data(data_url)
         transformers_list = [i for i in transformers_list if i]
+
+        try:
+            data = read_data(data_url)
+        except Exception as e:
+            data = None
 
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
-        p.output_id = upload_dataset(pipeline_name, org_name)
+        # p.output_id = upload_dataset(pipeline_name, org_name)
         p.save()
 
         p_id = p.pk
@@ -79,7 +83,8 @@ def pipe_create(request):
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
         temp_file_name = uuid.uuid4().hex
-        data.to_pickle(temp_file_name)
+        if data:
+            data.to_pickle(temp_file_name)
         model_to_pipeline(p_id, temp_file_name)
         context = {"result": p_id, "Success": True}
 

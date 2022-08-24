@@ -10,11 +10,15 @@ import os
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
 
-@background(schedule=2)
+# @background(schedule=2)
 def model_to_pipeline(pipeline_id, data_pickle):
     try:
-        data = pd.read_pickle(data_pickle)
-        os.remove(data_pickle)
+        data = None
+        try:
+            data = pd.read_pickle(data_pickle)
+            os.remove(data_pickle)
+        except:
+            pass
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
         tasks = pipeline_object.task_set.all().order_by("order_no")
         new_pipeline = pipeline.Pipeline(pipeline_object, data)

@@ -1,7 +1,8 @@
 {
     "tasks": {
         "merge_columns": "MergeColumns",
-        "skip_column": "SkipColumn"
+        "skip_column": "SkipColumn",
+        "Ckan": "CkanTOIDP"
     },
     "CKANApiKey": "2ef8ee32-6bed-4246-aaef-d4e22cce9cce",
     "CKANUrl":  "https://ndp.ckan.civicdatalab.in/",
