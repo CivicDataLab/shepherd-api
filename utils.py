@@ -59,42 +59,26 @@ def upload_resource(res_dict):
 
 
 def create_resource(res_dict):
-    package_id = res_dict['package_id']
     resource_name = res_dict['resource_name']
     data = res_dict['data']
     description = "Executing " + resource_name + " on user provided data"
     data.to_csv('data110.csv')
     file_path = 'data110.csv'
     payload = {
-        'operations': '{"query":"mutation mutation_create_resource($file: Upload!) {'
-                      'create_resource('
-                      'resource_data: {'
-                      'file: $file, '
-                      'title: %s,'
-                      'description: %s,'
-                      'dataset: "5",'
-                      'remote_url: "",'
-                      'format: "CSV"}'
-                      ') '
-                      '{'
-                      'success'
-                      'errors'
-                      '}'
-                      '}'
-                      '","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
-                          resource_name, description),
-        'map': '{"0": ["variables.file"]}'}
+        'operations': '{"query":"mutation mutation_create_resource($file: Upload!) {\\n  create_resource(\\n    '
+                      'resource_data: {file: $file, title: \\"%s\\", description: \\"%s\\", '
+                      'dataset: \\"5\\", remote_url: \\"\\", format: \\"CSV\\"}\\n  ) { resource { id }  '
+                      '}\\n}\\n","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
+                      resource_name, description),
+        'map': '{"0":["variables.file"]}'}
+
     files = [
-        ('0', ('data110.csv', open(file_path, 'rb'), 'csv'))
+        ('0', ('data110.csv', open(file_path, 'rb'), 'text/csv'))
     ]
-    print("files....", files)
-    headers = {
-        'Content-Type': 'multipart/form-data'
-    }
     url = "http://idpbe.civicdatalab.in/graphql"
-    response = requests.request("POST", url, headers=headers, data=payload, files=files)
-    print("response....", response.text)
-    return random.randint(1, 1000000000)
+    response = requests.request("POST", url, data=payload, files=files)
+    response_json = json.loads(response.text)
+    return (response_json['data']['create_resource']['resource']['id'])
 
 # def main():
 #

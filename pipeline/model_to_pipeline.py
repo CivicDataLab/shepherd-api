@@ -28,11 +28,7 @@ def model_to_pipeline(pipeline_id, data_pickle):
         except:
             pass
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
-        l = pipeline_object.task_set.all()
         tasks = pipeline_object.task_set.all().order_by("order_no")
-        # task_names = pipeline_object.task_set.get(pk=pipeline_id)
-        # for i in task_names:
-        #     print(i)
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
 
         def execution_from_model(task):
@@ -42,9 +38,6 @@ def model_to_pipeline(pipeline_id, data_pickle):
         print("data recieved\n", new_pipeline.data)
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         return
-        # # new_pipeline.execute()
-        # with ThreadPoolExecutor(max_workers=1) as executor:
-        #     _ = executor.submit(new_pipeline.execute)
 
     except Exception as e:
         raise e

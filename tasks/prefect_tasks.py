@@ -4,9 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 from prefect import task, flow
 
-from datatransform import models
-from pipeline.pipeline import Pipeline
-from datatransform.models import Task
 from utils import upload_resource, create_resource
 
 
