@@ -54,7 +54,7 @@ def pipe_create(request):
         # print(request.body)
 
         post_data = json.loads(request.body.decode('utf-8'))
-        # print(post_data)
+        print("whole data ___",post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         org_name = post_data.get('org_name', None)
@@ -62,7 +62,7 @@ def pipe_create(request):
 
         # print(data_url, transformers_list)
         transformers_list = [i for i in transformers_list if i]
-
+        print("@@@@",transformers_list)
         try:
             data = read_data(data_url)
         except Exception as e:
@@ -83,11 +83,11 @@ def pipe_create(request):
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
         temp_file_name = uuid.uuid4().hex
-        if data:
+        if not data.empty:
             data.to_pickle(temp_file_name)
         model_to_pipeline(p_id, temp_file_name)
         context = {"result": p_id, "Success": True}
-
+        print("returned to view from model_to_pipeline")
         return JsonResponse(context, safe=False)
 
         # transformed_data = data.copy()
