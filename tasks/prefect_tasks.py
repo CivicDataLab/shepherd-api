@@ -30,9 +30,15 @@ def merge_columns(context, pipeline, task):
     set_task_model_values(task, pipeline)
 
 
+@task
+def anonymize_columns(context, pipeline, task):
+    pass
+
 @flow
 def pipeline_executor(pipeline):
+    print("setting ", pipeline.model.pipeline_name, " status to In Progress")
     pipeline.model.status = "In Progress"
+    print(pipeline.model.status)
     pipeline.model.save()
     tasks_objects = pipeline._commands
     func_names = get_task_names(tasks_objects)
@@ -43,6 +49,7 @@ def pipeline_executor(pipeline):
     except Exception as e:
         raise e
     pipeline.model.status = "Done"
+    print("Data after pipeline execution\n", pipeline.data)
     pipeline.model.save()
     return
 

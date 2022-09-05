@@ -76,9 +76,10 @@ def create_resource(res_dict):
         ('0', ('data110.csv', open(file_path, 'rb'), 'text/csv'))
     ]
     url = "http://idpbe.civicdatalab.in/graphql"
-    response = requests.request("POST", url, data=payload, files=files)
-    response_json = json.loads(response.text)
-    return (response_json['data']['create_resource']['resource']['id'])
+    return random.randint(1, 1000000)
+    # response = requests.request("POST", url, data=payload, files=files)
+    # response_json = json.loads(response.text)
+    # return (response_json['data']['create_resource']['resource']['id'])
 
 # def main():
 #

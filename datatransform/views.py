@@ -1,5 +1,6 @@
+import pika
+
 from .models import Task, Pipeline
-from pipeline.model_to_pipeline import model_to_pipeline
 
 # Create your views here.
 
@@ -83,7 +84,25 @@ def pipe_create(request):
         temp_file_name = uuid.uuid4().hex
         if not data.empty:
             data.to_pickle(temp_file_name)
-        model_to_pipeline(p_id, temp_file_name)
+        # push to message broker.
+        ######################################
+        message_body = {
+            'p_id': p_id,
+            'temp_file_name': temp_file_name
+        }
+
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
+        channel.queue_declare(queue='pipeline_ui_queue')
+        channel.basic_publish(exchange='',
+                              routing_key='pipeline_ui_queue',
+                              body=json.dumps(message_body))
+        print(" [x] Sent %r" % message_body)
+        connection.close()
+        ##########################################
+        #model_to_pipeline(p_id, temp_file_name)
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
