@@ -2,8 +2,13 @@ import json
 import os
 import sys
 
+import django
 import pika
 from pipeline.model_to_pipeline import *
+from datatransform.models import Pipeline
+
+# pipeline_object = Pipeline.objects.get(pk=196)
+# print(pipeline_object.pipeline_name)
 
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -29,12 +34,13 @@ def main():
     channel.start_consuming()
 
 
-if __name__ == '__main__':
+print("inside demon main...")
+
+try:
+    main()
+except KeyboardInterrupt:
+    print('Interrupted')
     try:
-        main()
-    except KeyboardInterrupt:
-        print('Interrupted')
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)
+        sys.exit(0)
+    except SystemExit:
+        os._exit(0)

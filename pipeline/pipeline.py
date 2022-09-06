@@ -2,11 +2,10 @@ import sys
 
 import pandas as pd
 
-import os
-sys.path.append('dataplatform')
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dataplatform.settings")
-import django
-django.setup()
+# import os
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dataplatform.settings")
+# import django
+# django.setup()
 from datatransform import models
 from datatransform.models import Task
 
