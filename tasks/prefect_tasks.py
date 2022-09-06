@@ -121,8 +121,9 @@ def get_task_contexts(task_obj_list):
 
 
 def set_task_model_values(task, pipeline):
-    task.output_id = create_resource(
-        {'package_id': pipeline.model.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
+    task.output_id = '1'
+    # create_resource(
+    #     {'package_id': pipeline.model.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
     print({'package_id': task.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
     task.status = "Done"
     task.save()

@@ -124,7 +124,7 @@ def res_transform(request):
 
         post_data = json.loads(request.body.decode('utf-8'))
         transformers_list = post_data.get('transformers_list', None)
-        org_name = post_data.get('org_name', None)
+        # org_name = post_data.get('org_name', None)
         res_id = post_data.get('res_id', None)
         pipeline_name = str(res_id) + "-" + str(uuid.uuid4())
 
@@ -163,7 +163,7 @@ def res_transform(request):
                 }
                 """
         headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-        request = requests.post('https://api.github.com/graphql', json={'query': query}, headers=headers)
+        request = requests.post('http://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
         response = json.loads(request.text)
         data_url = response['data']['resource']['remote_url']
 
@@ -192,7 +192,8 @@ def res_transform(request):
             data.to_pickle(temp_file_name)
         message_body = {
             'p_id': p_id,
-            'temp_file_name': temp_file_name
+            'temp_file_name': temp_file_name,
+            'res_details': response,
         }
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))

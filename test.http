@@ -11,4 +11,18 @@ content-type: application/json
 }
 
 
+POST https://pipeline.ndp.civicdatalab.in/transformer/res_transform HTTP/1.1
+content-type: application/json
+
+{
+  "res_id" : 10,
+  "transformers_list" : [{"name" : "skip_column", "order_no" : 1, "context": {"columns":["Gender", "Religion"]}},
+                        {"name" : "skip_column", "order_no" : 1, "context": {"columns":["Caste"]}},
+                        {"name" : "merge_columns", "order_no" : 1, "context": {"column1":"Gender", "column2":"Caste", "output_column":"Gen_cast", 
+                        "separator":"|"}}]
+}
+
+
+
+
 ###

@@ -22,7 +22,8 @@ def main():
         p_id = body_json['p_id']
         # print("got p_id as ", body_json['p_id'])
         temp_file_name = body_json['temp_file_name']
-        task_executor(p_id, temp_file_name)
+        res_details =  body_json['res_details']
+        task_executor(p_id, temp_file_name, res_details)
         # print("got temp_file name as ", body_json['temp_file_name'])
         # os.remove('./'+temp_file_name)
         print(" [x] Done")
