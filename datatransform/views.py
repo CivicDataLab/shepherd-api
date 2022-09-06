@@ -164,7 +164,7 @@ def res_transform(request):
                 """
         headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
         request = requests.post('https://api.github.com/graphql', json={'query': query}, headers=headers)
-        response = request.body()
+        response = json.loads(request.text)
         data_url = response['data']['resource']['remote_url']
 
         transformers_list = [i for i in transformers_list if i]
