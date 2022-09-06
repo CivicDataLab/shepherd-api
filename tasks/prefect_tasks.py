@@ -1,38 +1,91 @@
 import json
+import logging
+import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
-from prefect import task, flow
-
+import pdfkit
+from json2xml import json2xml
+from prefect import task, flow, get_run_logger
 from utils import upload_resource, create_resource
 
 
-@task
-def skip_column(context, pipeline, task):
+@task(retries=3)
+def skip_column(context, pipeline, task_obj):
     column = context['columns']
     try:
         pipeline.data = pipeline.data.drop(column, axis=1)
     except Exception as e:
-        print("Problem " + str(e) + " while executing skip_column task. Retrying...")
-    set_task_model_values(task, pipeline)
+        send_error_to_prefect_cloud(e)
+    set_task_model_values(task_obj, pipeline)
 
 
 @task
-def merge_columns(context, pipeline, task):
+def merge_columns(context, pipeline, task_obj):
+    print(context)
+    print("inside merge cols...")
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
     separator = context['separator']
+    print(pipeline.data[column1])
     try:
+        print("inside try of merge_col")
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
             .astype(str)
         pipeline.data = pipeline.data.drop([column1, column2], axis=1)
     except Exception as e:
-        print("Problem " + str(e) + " while executing merge_columns task. Retrying...")
-    set_task_model_values(task, pipeline)
+        send_error_to_prefect_cloud(e)
+    set_task_model_values(task_obj, pipeline)
 
 
 @task
-def anonymize_columns(context, pipeline, task):
-    pass
+def anonymize(context, pipeline, task_obj):
+    # TODO - decide on the context contents
+    to_replace = context['to_replace']
+    replace_val = context['replace_val']
+    col = context['column']
+    try:
+        df_updated = pipeline.data[col].str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
+        df_updated = df_updated.to_frame()
+        pipeline.data[col] = df_updated[col]
+    except Exception as e:
+        send_error_to_prefect_cloud(e)
+    set_task_model_values(task_obj, pipeline)
+
+
+@task
+def change_format(context, pipeline, task_obj):
+    # TODO - decide on the context contents
+    file_format = context['format']
+    if file_format == "xml":
+        data_string = pipeline.data.to_json(orient='records')
+        json_data = json.loads(data_string)
+        xml_data = json2xml.Json2xml(json_data).to_xml()
+        print(xml_data)
+        with open('xml_data.xml', 'w') as f:
+            f.write(xml_data)
+    elif file_format == "pdf":
+        pipeline.data.to_html("data.html")
+        pdfkit.from_file("data.html", "pdf_data.pdf")
+        os.remove('data.html')
+    elif file_format == "json":
+        data_string = pipeline.data.to_json(orient='records')
+        with open("json_data.json", "w") as f:
+            f.write(data_string)
+
+    set_task_model_values(task_obj, pipeline)
+
+
+@task
+def aggregate(context, pipeline, task_obj):
+    index = context['index']
+    columns = context['columns']
+    values = context['values']
+    columns = columns.split(",")
+    values = values.split(",")
+    pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
+    set_task_model_values(task_obj, pipeline)
+
 
 @flow
 def pipeline_executor(pipeline):
@@ -75,3 +128,8 @@ def set_task_model_values(task, pipeline):
     print({'package_id': task.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
     task.status = "Done"
     task.save()
+
+
+def send_error_to_prefect_cloud(e:Exception):
+    prefect_logger = get_run_logger()
+    prefect_logger.error(str(e))

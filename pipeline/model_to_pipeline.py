@@ -11,6 +11,7 @@ mod = __import__('tasks', fromlist=settings.tasks.values())
 
 def task_executor(pipeline_id, data_pickle):
     print("inside te***")
+    print("pipeline_id is ", pipeline_id)
     data = Pipeline.objects.get(pk=pipeline_id)
     print(data.pipeline_name)
     try:

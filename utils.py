@@ -64,13 +64,16 @@ def create_resource(res_dict):
     description = "Executing " + resource_name + " on user provided data"
     data.to_csv('data110.csv')
     file_path = 'data110.csv'
-    payload = {
-        'operations': '{"query":"mutation mutation_create_resource($file: Upload!) {\\n  create_resource(\\n    '
-                      'resource_data: {file: $file, title: \\"%s\\", description: \\"%s\\", '
-                      'dataset: \\"5\\", remote_url: \\"\\", format: \\"CSV\\"}\\n  ) { resource { id }  '
-                      '}\\n}\\n","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
-                      resource_name, description),
-        'map': '{"0":["variables.file"]}'}
+    # working ....
+    # payload = {
+    #     'operations': '{"query":"mutation mutation_create_resource($file: Upload!) {\\n  create_resource(\\n    '
+    #                   'resource_data: {file: $file, title: \\"%s\\", description: \\"%s\\", '
+    #                   'dataset: \\"5\\", remote_url: \\"\\", format: \\"CSV\\"}\\n  ) { resource { id }  '
+    #                   '}\\n}\\n","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
+    #                   resource_name, description),
+    #     'map': '{"0":["variables.file"]}'}
+
+
 
     files = [
         ('0', ('data110.csv', open(file_path, 'rb'), 'text/csv'))

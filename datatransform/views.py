@@ -1,4 +1,5 @@
 import pika
+import requests
 
 from .models import Task, Pipeline
 
@@ -84,13 +85,10 @@ def pipe_create(request):
         temp_file_name = uuid.uuid4().hex
         if not data.empty:
             data.to_pickle(temp_file_name)
-        # push to message broker.
-        ######################################
         message_body = {
             'p_id': p_id,
             'temp_file_name': temp_file_name
         }
-
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
         channel = connection.channel()
@@ -101,8 +99,6 @@ def pipe_create(request):
                               body=json.dumps(message_body))
         print(" [x] Sent %r" % message_body)
         connection.close()
-        ##########################################
-        #model_to_pipeline(p_id, temp_file_name)
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
@@ -118,6 +114,99 @@ def read_data(data_url):
     all_data.fillna(value="", inplace=True)
 
     return all_data
+
+
+def res_transform(request):
+    if request.method == 'POST':
+
+        # print("enter")
+        # print(request.body)
+
+        post_data = json.loads(request.body.decode('utf-8'))
+        transformers_list = post_data.get('transformers_list', None)
+        org_name = post_data.get('org_name', None)
+        res_id = post_data.get('res_id', None)
+        pipeline_name = str(res_id) + "-" + str(uuid.uuid4())
+
+        query = """{
+                    resource(resource_id: 10) {
+                    id
+                    title
+                    description
+                    issued
+                    modified
+                    remote_url
+                    format
+                    file
+                    status
+                    dataset {
+                      id
+                      title
+                      description
+                      issued
+                      remote_issued
+                      remote_modified
+                      period_from
+                      period_to
+                      update_frequency
+                      modified
+                      sector
+                      status
+                      remark
+                      funnel
+                      action
+                      access_type
+                      geography
+                      License
+                    }
+                  }
+                }
+                """
+        headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
+        request = requests.post('https://api.github.com/graphql', json={'query': query}, headers=headers)
+        response = request.body()
+        data_url = response['data']['resource']['remote_url']
+
+        transformers_list = [i for i in transformers_list if i]
+        try:
+            data = read_data(data_url)
+        except Exception as e:
+            data = None
+
+        p = Pipeline(status="Created", pipeline_name=pipeline_name)
+
+        # p.output_id = upload_dataset(pipeline_name, org_name)
+        p.save()
+
+        p_id = p.pk
+
+        for _, each in enumerate(transformers_list):
+            task_name = each.get('name', None)
+            task_order_no = each.get('order_no', None)
+            task_context = each.get('context', None)
+
+            p = Pipeline.objects.get(pk=p_id)
+            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
+        temp_file_name = uuid.uuid4().hex
+        if not data.empty:
+            data.to_pickle(temp_file_name)
+        message_body = {
+            'p_id': p_id,
+            'temp_file_name': temp_file_name
+        }
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
+        channel.queue_declare(queue='pipeline_ui_queue')
+        channel.basic_publish(exchange='',
+                              routing_key='pipeline_ui_queue',
+                              body=json.dumps(message_body))
+        print(" [x] Sent %r" % message_body)
+        connection.close()
+        context = {"result": p_id, "Success": True}
+        return JsonResponse(context, safe=False)
+
 
 # def multiply(data, trans_column, trans_operval):
 
