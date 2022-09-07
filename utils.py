@@ -107,27 +107,29 @@ def create_resource(res_dict):
 def update_resource(res_dict):
     res_details = res_dict['res_details']
     data = res_dict['data']
+    print ('-------------------', data)
     data.to_csv('data110.csv')
     
     file_path = 'data110.csv'
     file      = open(file_path, 'rb')
     variables = {"file": None}  
     map       = json.dumps({ "0": ["variables.file"] })
-    
-    
+   
     query = f"""
-            mutation($file: Upload!) {{update_resource(resource_data: {{
-            id:{res_details['data']['resource']['id']}, title:{res_details['data']['resource']['title']}, description:{res_details['data']['resource']['description']},
-            file:$file,
-            dataset:{res_details['data']['resource']['dataset']['id']},
-            status:{res_details['data']['resource']['status']}, format:{res_details['data']['resource']['format']}, remote_url:{res_details['data']['resource']['remote_url']},
-            }})
-            {{
-            success
-            errors
-            resource  {{ id }}
-        }}
-        }}"""
+        mutation($file: Upload!) {{update_resource(resource_data: {{
+        id:{res_details['data']['resource']['id']}, title:"{res_details['data']['resource']['title']}", description:"{res_details['data']['resource']['description']}", file:   $file,  
+        dataset:"{res_details['data']['resource']['dataset']['id']}",
+        status:"{res_details['data']['resource']['status']}", format:"{res_details['data']['resource']['format']}", remote_url:"{res_details['data']['resource']['remote_url']}"
+        }})
+        {{
+        success
+        errors
+        resource {{ id }}
+    }}
+    }}""" 
+   
+ 
+
         
     operations = json.dumps({
             "query": query,

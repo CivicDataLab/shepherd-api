@@ -4,8 +4,14 @@ import sys
 
 import django
 import pika
-from pipeline.model_to_pipeline import *
-from datatransform.models import Pipeline
+#from pipeline.model_to_pipeline import *
+print ('inside ----')
+try:
+    from pipeline.model_to_pipeline import * 
+    pass
+except Exception as e:
+    print ('exception ----',e)
+    
 
 # pipeline_object = Pipeline.objects.get(pk=196)
 # print(pipeline_object.pipeline_name)
@@ -23,7 +29,10 @@ def main():
         # print("got p_id as ", body_json['p_id'])
         temp_file_name = body_json['temp_file_name']
         res_details =  body_json['res_details']
-        task_executor(p_id, temp_file_name, res_details)
+        try:
+            task_executor(p_id, temp_file_name, res_details)
+        except Exception as e:
+            print (e)
         # print("got temp_file name as ", body_json['temp_file_name'])
         # os.remove('./'+temp_file_name)
         print(" [x] Done")

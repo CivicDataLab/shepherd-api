@@ -128,8 +128,8 @@ def res_transform(request):
         res_id = post_data.get('res_id', None)
         pipeline_name = str(res_id) + "-" + str(uuid.uuid4())
 
-        query = """{
-                    resource(resource_id: 10) {
+        query = f"""{{
+                    resource(resource_id: {res_id}) {{
                     id
                     title
                     description
@@ -139,7 +139,7 @@ def res_transform(request):
                     format
                     file
                     status
-                    dataset {
+                    dataset {{
                       id
                       title
                       description
@@ -158,9 +158,9 @@ def res_transform(request):
                       access_type
                       geography
                       License
-                    }
-                  }
-                }
+                    }}
+                  }}
+                }}
                 """
         headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
         request = requests.post('http://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
