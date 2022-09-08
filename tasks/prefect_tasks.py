@@ -10,6 +10,7 @@ from json2xml import json2xml
 from prefect import task, flow, get_run_logger
 from utils import upload_resource, create_resource
 
+@task
 def skip_column(context, pipeline, task_obj):
     column = context['columns']
     try:

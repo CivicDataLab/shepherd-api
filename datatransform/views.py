@@ -5,7 +5,7 @@ from .models import Task, Pipeline
 
 # Create your views here.
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import pandas as pd
 import json
 import uuid
@@ -21,7 +21,7 @@ def transformer_list(request):
             {"name": "column2", "type": "string", "desc": "Please enter second column name"},
             {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
             {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
-        ]}
+        ]},
     ]
 
     context = {"result": transformers, "Success": True}
@@ -60,7 +60,7 @@ def pipe_create(request):
         data_url = post_data.get('data_url', None)
         org_name = post_data.get('org_name', None)
         pipeline_name = post_data.get('name', '')
-
+        print("*******", transformers_list)
         # print(data_url, transformers_list)
         transformers_list = [i for i in transformers_list if i]
         try:
@@ -87,7 +87,8 @@ def pipe_create(request):
             data.to_pickle(temp_file_name)
         message_body = {
             'p_id': p_id,
-            'temp_file_name': temp_file_name
+            'temp_file_name': temp_file_name,
+            'res_detail': ""
         }
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
@@ -208,6 +209,36 @@ def res_transform(request):
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
+
+def custom_data_viewer(request):
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        print("data received..", post_data)
+        data_url = post_data.get('data_url')
+        columns = post_data.get('columns')
+        num_rows = post_data.get('rows')
+        # print(data_url, columns, num_rows)
+        try:
+            data = read_data(data_url)
+        except Exception as e:
+            data = None
+        # if no columns specified, return whole dataframe
+        if len(columns) == 0:
+            column_selected_df= data
+        else:
+            column_selected_df = data.loc[:, data.columns.isin(columns)]
+        # if row length is not specified return all rows
+        if num_rows == "" or int(num_rows) > len(column_selected_df):
+            final_df = column_selected_df
+        else:
+            num_rows_int = int(num_rows)
+            final_df = column_selected_df.iloc[:num_rows_int]
+
+        print(final_df)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=export.csv'
+        final_df.to_csv(path_or_buf=response)  # with other applicable parameters
+        return response
 
 # def multiply(data, trans_column, trans_operval):
 

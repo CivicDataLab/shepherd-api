@@ -11,6 +11,17 @@ content-type: application/json
 }
 
 
+POST http://127.0.0.1:8000/transformer/pipe_create HTTP/1.1
+content-type: application/json
+
+{
+  "data_url" : "https://justicehub.in/dataset/a51492b5-58ba-471e-94d1-8064c2d92238/resource/6dba3a17-384a-49c4-8ed6-bdfea9ea47e3/download/summer-of-data-meghalaya-high-court-datasheet.csv",
+  "name": "Test pipeline n1",
+  "transformers_list" : [{"name" : "change_format", "order_no" : 1, "context": {"format" : "xml"}}
+}
+
+
+
 POST https://pipeline.ndp.civicdatalab.in/transformer/res_transform HTTP/1.1
 content-type: application/json
 
@@ -23,6 +34,13 @@ content-type: application/json
 }
 
 
+POST http://127.0.0.1:8000/transformer/custom_data_viewer
+content-type: application/json
 
+{
+    "data_url" : "https://justicehub.in/dataset/a51492b5-58ba-471e-94d1-8064c2d92238/resource/6dba3a17-384a-49c4-8ed6-bdfea9ea47e3/download/summer-of-data-meghalaya-high-court-datasheet.csv",
+    "columns": ["Ages", "Gender", "Religions", "Hindu", "Religion", "Chamber Details"],
+    "rows" : "29"
+}
 
 ###

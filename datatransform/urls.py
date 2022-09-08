@@ -8,4 +8,5 @@ urlpatterns = [
     path('pipe_create', csrf_exempt(views.pipe_create), name='pipe_create'),
     path('pipe_list', csrf_exempt(views.pipe_list), name='pipe_list'),
     path('res_transform', csrf_exempt(views.res_transform), name='res_transform'),
+    path('custom_data_viewer', csrf_exempt(views.custom_data_viewer), name='custom_data_viewer')
 ]
