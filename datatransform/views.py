@@ -88,7 +88,7 @@ def pipe_create(request):
         message_body = {
             'p_id': p_id,
             'temp_file_name': temp_file_name,
-            'res_detail': ""
+            'res_details': ""
         }
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
