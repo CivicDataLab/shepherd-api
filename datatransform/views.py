@@ -22,6 +22,18 @@ def transformer_list(request):
             {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
             {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
         ]},
+        {"name": "change_format", "context": [
+            {"name": "format", "type": "string", "desc": "PDF/JSON/XML"}]},
+        {"name": "anonymize", "context": [
+            {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
+            {"name": "replace_val", "type": "string", "desc": "Replacement string"},
+            {"name": "column", "type": "string", "desc": "Desired column"}
+        ]},
+        {"name": "aggregate", "context": [
+            {"name": "index", "type": "string", "desc": "Field that is needed as index"},
+            {"name": "columns", "type": "string", "desc": "CSV of column names"},
+            {"name": "values", "type": "string", "desc": "values"}
+        ]}
     ]
 
     context = {"result": transformers, "Success": True}
