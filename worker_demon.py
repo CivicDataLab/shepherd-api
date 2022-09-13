@@ -29,8 +29,9 @@ def main():
         # print("got p_id as ", body_json['p_id'])
         temp_file_name = body_json['temp_file_name']
         res_details = body_json['res_details']
+        db_action = body_json['db_action']
         try:
-            task_executor(p_id, temp_file_name, res_details)
+            task_executor(p_id, temp_file_name, res_details, db_action)
         except Exception as e:
             print (e)
         # print("got temp_file name as ", body_json['temp_file_name'])

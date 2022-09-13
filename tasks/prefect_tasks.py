@@ -87,6 +87,27 @@ def aggregate(context, pipeline, task_obj):
     set_task_model_values(task_obj, pipeline)
 
 
+@task
+def query_data_resource(context, pipeline, task_obj):
+    columns = context['columns']
+    num_rows = int(context["rows"])
+
+    if len(columns) == 0:
+        column_selected_df = pipeline.data
+    else:
+        column_selected_df = pipeline.data.loc[:, pipeline.data.columns.isin(columns)]
+    # if row length is not specified return all rows
+    if num_rows == "" or int(num_rows) > len(column_selected_df):
+        final_df = column_selected_df
+    else:
+        num_rows_int = int(num_rows)
+        final_df = column_selected_df.iloc[:num_rows_int]
+    pipeline.data = final_df
+    print(pipeline.data)
+
+    set_task_model_values(task_obj, pipeline)
+
+
 @flow
 def pipeline_executor(pipeline):
     print("setting ", pipeline.model.pipeline_name, " status to In Progress")
@@ -102,6 +123,7 @@ def pipeline_executor(pipeline):
     except Exception as e:
         raise e
     pipeline.model.status = "Done"
+    pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
     print("Data after pipeline execution\n", pipeline.data)
     pipeline.model.save()
     return

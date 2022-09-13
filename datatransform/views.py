@@ -33,6 +33,10 @@ def transformer_list(request):
             {"name": "index", "type": "string", "desc": "Field that is needed as index"},
             {"name": "columns", "type": "string", "desc": "CSV of column names"},
             {"name": "values", "type": "string", "desc": "values"}
+        ]},
+        {"name": "query_data_resource", "context": [
+            {"name": "columns", "type": "string", "desc": "Enter csv columns to be queried"},
+            {"name": "rows", "type": "string", "desc": "Enter num of rows required"}
         ]}
     ]
 
@@ -68,6 +72,7 @@ def pipe_create(request):
         # print(request.body)
 
         post_data = json.loads(request.body.decode('utf-8'))
+        print("#####",post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         org_name = post_data.get('org_name', None)
@@ -139,8 +144,9 @@ def res_transform(request):
         transformers_list = post_data.get('transformers_list', None)
         # org_name = post_data.get('org_name', None)
         res_id = post_data.get('res_id', None)
-        pipeline_name = str(res_id) + "-" + str(uuid.uuid4())
-
+        db_action = post_data.get('db_action', None)
+        pipeline_name = str(res_id) + "-" + str(uuid.uuid4())[:8]
+        data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
         query = f"""{{
                     resource(resource_id: {res_id}) {{
                     id
@@ -150,6 +156,11 @@ def res_transform(request):
                     modified
                     remote_url
                     format
+                    schema{{
+                    key
+                    format
+                    description
+                    }}
                     file
                     status
                     dataset {{
@@ -169,7 +180,6 @@ def res_transform(request):
                       funnel
                       action
                       access_type
-                      geography
                       License
                     }}
                   }}
@@ -178,8 +188,9 @@ def res_transform(request):
         headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
         request = requests.post('http://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
         response = json.loads(request.text)
-        data_url = response['data']['resource']['remote_url']
-
+        print(response)
+        #data_url = response['data']['resource']['remote_url']
+        print(data_url)
         transformers_list = [i for i in transformers_list if i]
         try:
             data = read_data(data_url)
@@ -207,6 +218,7 @@ def res_transform(request):
             'p_id': p_id,
             'temp_file_name': temp_file_name,
             'res_details': response,
+            'db_action' : db_action
         }
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
@@ -226,17 +238,18 @@ def custom_data_viewer(request):
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))
         print("data received..", post_data)
-        data_url = post_data.get('data_url')
+        res_id = post_data.get('res_id')
         columns = post_data.get('columns')
         num_rows = post_data.get('rows')
         # print(data_url, columns, num_rows)
+        data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
         try:
             data = read_data(data_url)
         except Exception as e:
             data = None
         # if no columns specified, return whole dataframe
         if len(columns) == 0:
-            column_selected_df= data
+            column_selected_df = data
         else:
             column_selected_df = data.loc[:, data.columns.isin(columns)]
         # if row length is not specified return all rows

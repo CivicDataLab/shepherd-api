@@ -59,78 +59,92 @@ def upload_resource(res_dict):
 
 
 def create_resource(res_dict):
+    print("creating the resource..")
     resource_name = res_dict['resource_name']
     data = res_dict['data']
     description = "Executing " + resource_name + " on user provided data"
     data.to_csv('data110.csv')
     file_path = 'data110.csv'
     # working ....
+
+    # 'resource_data: {file: $file, ' \
+    # 'title: \\"%s\\", ' \
+    # 'description: \\"%s\\", ' \
+    # 'dataset: \\"5\\", ' \
+    # 'remote_url: \\"\\", ' \
+    # 'format: \\"CSV\\", status: \\"\\", schema:{ key: \\"\\", format:  } }'
+
+
     # payload = {
     #     'operations': '{"query":"mutation mutation_create_resource($file: Upload!) {\\n  create_resource(\\n    '
     #                   'resource_data: {file: $file, title: \\"%s\\", description: \\"%s\\", '
-    #                   'dataset: \\"5\\", remote_url: \\"\\", format: \\"CSV\\"}\\n  ) { resource { id }  '
-    #                   '}\\n}\\n","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
+    #                   'dataset: \\"5\\", remote_url: \\"\\", format: \\"CSV\\", status:\\"\\", schema:{id:\\"\\", key:\\"\\", format:\\"\\", description:\\"\\"} \\n) { resource { id } }'
+    #                   '\\n}\\n","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
     #                   resource_name, description),
-    #     'map': '{"0":["variables.file"]}'}    
+    #     'map': '{"0":["variables.file"]}'}
 
-
+    payload = {
+        'operations': '{"query":"mutation mutation_create_resource($file: Upload!) {\\n  create_resource(\\n    '
+                      'resource_data: {file: $file, title: \\"%s\\", description: \\"%s\\", '
+                      'dataset: \\"5\\", remote_url: \\"\\", format: \\"CSV\\", status:\\"\\", schema:{key:\\"\\",format:\\"\\", description:\\"\\"}}\\n  ) { resource { id }  '
+                      '}\\n}\\n","variables":{"file":null},"operationName":"mutation_create_resource"}' % (
+                      resource_name, description),
+        'map': '{"0":["variables.file"]}'}
 
     files = [
         ('0', ('data110.csv', open(file_path, 'rb'), 'text/csv'))
     ]
     url = "http://idpbe.civicdatalab.in/graphql"
-    return random.randint(1, 1000000)
-    # response = requests.request("POST", url, data=payload, files=files)
-    # response_json = json.loads(response.text)
-    # return (response_json['data']['create_resource']['resource']['id'])
-
-# def main():
-#
-#     # pkg_dict = {'pkg_name': 'test2', 'pkg_title': 'test2', 'owner_org': 'test'}
-#
-#     # upload_dataset(pkg_dict)
-#
-#     data = [['tom', 10], ['nick', 15], ['juli', 14]]
-#
-#     # Create the pandas DataFrame
-#     df = pd.DataFrame(data, columns = ['Name', 'Age'])
-#
-#
-#     res_dict = {'package_id': 'test2', 'resource_name': 'test12', 'data': df}
-#
-#     upload_resource(res_dict)
-#
-# if __name__ == '__main__':
-#     main()
+    # return random.randint(1, 1000000)
+    response = requests.request("POST", url, data=payload, files=files)
+    response_json = json.loads(response.text)
+    print(response_json)
+    return response_json['data']['create_resource']['resource']['id']
 
 
 def update_resource(res_dict):
+    print("in update..&&&&")
     res_details = res_dict['res_details']
     data = res_dict['data']
     print ('-------------------', data)
     data.to_csv('data110.csv')
-    
+    print("details..", res_details)
     file_path = 'data110.csv'
-    file      = open(file_path, 'rb')
+    file = open(file_path, 'rb')
     variables = {"file": None}  
     map       = json.dumps({ "0": ["variables.file"] })
-   
-    query = f"""
-        mutation($file: Upload!) {{update_resource(resource_data: {{
-        id:{res_details['data']['resource']['id']}, title:"{res_details['data']['resource']['title']}", description:"{res_details['data']['resource']['description']}", file:   $file,  
-        dataset:"{res_details['data']['resource']['dataset']['id']}",
-        status:"{res_details['data']['resource']['status']}", format:"{res_details['data']['resource']['format']}", remote_url:"{res_details['data']['resource']['remote_url']}"
-        }})
-        {{
-        success
-        errors
-        resource {{ id }}
-    }}
-    }}""" 
-   
- 
+    key = "key"
+    format = "format"
+    description = "description"
+    # query = f"""
+    #     mutation($file: Upload!) {{update_resource(resource_data: {{
+    #     id:{res_details['data']['resource']['id']}, title:"{res_details['data']['resource']['title']}", description:"{res_details['data']['resource']['description']}", file:   $file,
+    #     dataset:"{res_details['data']['resource']['dataset']['id']}",
+    #     status:"{res_details['data']['resource']['status']}", format:"{res_details['data']['resource']['format']}",
+    #     remote_url:"{res_details['data']['resource']['remote_url']}", schema:{{}},
+    #     }})
+    #     {{
+    #     success
+    #     errors
+    #     resource {{ id }}
+    # }}
+    # }}"""
 
-        
+    query = f"""
+            mutation($file: Upload!) {{update_resource(resource_data: {{
+            id:{res_details['data']['resource']['id']}, title:"{res_dict['resource_name']}", description:"{res_details['data']['resource']['description']}", file:   $file,  
+            dataset:"{res_details['data']['resource']['dataset']['id']}",
+            status:"{res_details['data']['resource']['status']}", format:"{res_details['data']['resource']['format']}", 
+            remote_url:"{res_details['data']['resource']['remote_url']}", schema:{{key: "", format:"",description:""}},
+            }})
+            {{
+            success
+            errors
+            resource {{ id }}
+        }}
+        }}"""
+
+    print(query)
     operations = json.dumps({
             "query": query,
             "variables": variables
@@ -142,5 +156,6 @@ def update_resource(res_dict):
     headers = {} 
     response = requests.post('http://idpbe.civicdatalab.in/graphql', data = {"operations": operations,"map": map}, files = {"0" : file}, headers=headers)
 
+    print(response)
     response_json = json.loads(response.text)
-    print(response_json)
+    print("updateresource.",response_json)
