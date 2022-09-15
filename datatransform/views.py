@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pika
 import requests
 
@@ -9,7 +11,6 @@ from django.http import JsonResponse, HttpResponse
 import pandas as pd
 import json
 import uuid
-from utils import upload_dataset
 
 
 def transformer_list(request):
@@ -146,7 +147,8 @@ def res_transform(request):
         res_id = post_data.get('res_id', None)
         db_action = post_data.get('db_action', None)
         pipeline_name = str(res_id) + "-" + str(uuid.uuid4())[:8]
-        data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
+        # data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
+        data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
         query = f"""{{
                     resource(resource_id: {res_id}) {{
                     id
@@ -174,7 +176,6 @@ def res_transform(request):
                       period_to
                       update_frequency
                       modified
-                      sector
                       status
                       remark
                       funnel
@@ -194,9 +195,14 @@ def res_transform(request):
         transformers_list = [i for i in transformers_list if i]
         try:
             data = read_data(data_url)
+            # response = requests.get(data_url)
+            # data_txt = response.text
+            # data = pd.read_csv(StringIO(data_txt), sep=",")
+            # print(data)
         except Exception as e:
             data = None
-
+            context = {"result": "NO data!!", "Success": False}
+            return JsonResponse(context, safe=False)
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
         # p.output_id = upload_dataset(pipeline_name, org_name)

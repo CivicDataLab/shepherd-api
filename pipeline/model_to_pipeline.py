@@ -1,7 +1,5 @@
-import sys
-import time
 import os
-from datatransform.models import Task, Pipeline
+from datatransform.models import Pipeline
 from pipeline import pipeline
 from config import settings
 import pandas as pd
@@ -36,13 +34,15 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         [execution_from_model(task) for task in tasks]
         print("data recieved\n", new_pipeline.data)
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
+        print("schema----",new_pipeline.schema)
         if db_action == "update":
             update_resource(
-            {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name ,'res_details': res_details, 'data': new_pipeline.data})
-        elif db_action == "create":
+            {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
+             'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})
+        if db_action == "create":
             id = create_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'data': new_pipeline.data}
+                 'data': new_pipeline.data, 'schema': new_pipeline.schema}
             )
             print("res_id created at...",id)
         return

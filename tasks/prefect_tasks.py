@@ -1,18 +1,37 @@
-import json
-import logging
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 import pdfkit
 from json2xml import json2xml
-from prefect import task, flow, get_run_logger
-from utils import upload_resource, create_resource
+from prefect import task, flow
+from task_utils import *
+
 
 @task
 def skip_column(context, pipeline, task_obj):
     column = context['columns']
+
+    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                        convert_integer=True, convert_boolean=True, convert_floating=True)
+
+    names_types_dict = pipeline.data.dtypes.astype(str).to_dict()
+
+    key_entry = column
+    print("donw here..")
+    format_entry = list()
+    print(column)
+    if isinstance(column, list):
+        for col in column:
+            format_entry.append(names_types_dict[col])
+    else:
+        format_entry = names_types_dict[column]
+    description_entry = "performed "+ task_obj.task_name + " under "+ pipeline.model.pipeline_name
+
+    pipeline.schema["key"].append(key_entry)
+    pipeline.schema["format"].append(format_entry)
+    pipeline.schema["description"].append(description_entry)
+
     try:
         pipeline.data = pipeline.data.drop(column, axis=1)
     except Exception as e:
@@ -26,7 +45,22 @@ def merge_columns(context, pipeline, task_obj):
     print("inside merge cols...")
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
     separator = context['separator']
-    print(pipeline.data[column1])
+
+    names_types_dict = pipeline.data.dtypes.astype(str).to_dict()
+    print("here I am...", names_types_dict)
+    key_entry1 = column1
+    key_entry2 = column2
+    format_entry1 = names_types_dict[column1]
+    format_entry2 = names_types_dict[column2]
+    print("format entries...", format_entry1, format_entry2)
+    description_entry = "performed " + task_obj.task_name + " under " + pipeline.model.pipeline_name
+
+    pipeline.schema["key"].append(key_entry1)
+    pipeline.schema["key"].append(key_entry2)
+    pipeline.schema["format"].append(format_entry1)
+    pipeline.schema["format"].append(format_entry2)
+    pipeline.schema["description"].append(description_entry)
+
     try:
         print("inside try of merge_col")
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
@@ -43,6 +77,16 @@ def anonymize(context, pipeline, task_obj):
     to_replace = context['to_replace']
     replace_val = context['replace_val']
     col = context['column']
+
+    names_types_dict = pipeline.data.dtypes.astype(str).to_dict()
+    key_entry = col
+    format_entry = names_types_dict[col]
+    description_entry = "performed " + task_obj.task_name + " under " + pipeline.model.pipeline_name
+    schema_dict = {"key": key_entry, "format": format_entry, "description": description_entry}
+    pipeline.schema.append(schema_dict)
+    # pipeline.schema["key"].append(key_entry)
+    # pipeline.schema["format"].append(format_entry)
+    # pipeline.schema["description"].append(description_entry)
     try:
         df_updated = pipeline.data[col].str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
         df_updated = df_updated.to_frame()
@@ -83,6 +127,15 @@ def aggregate(context, pipeline, task_obj):
     values = context['values']
     columns = columns.split(",")
     values = values.split(",")
+
+    key_entry = columns
+    format_entry = pipeline.data.dtypes[columns]
+    description_entry = "performed " + task_obj.task_name + " under " + pipeline.model.pipeline_name
+
+    pipeline.schema["key"].append(key_entry)
+    pipeline.schema["format"].append(format_entry)
+    pipeline.schema["description"].append(description_entry)
+
     pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
     set_task_model_values(task_obj, pipeline)
 
@@ -103,7 +156,14 @@ def query_data_resource(context, pipeline, task_obj):
         num_rows_int = int(num_rows)
         final_df = column_selected_df.iloc[:num_rows_int]
     pipeline.data = final_df
-    print(pipeline.data)
+
+    key_entry = columns
+    format_entry = pipeline.data.dtypes[columns]
+    description_entry = "performed " + task_obj.task_name + " under " + pipeline.model.pipeline_name
+
+    pipeline.schema["key"].append(key_entry)
+    pipeline.schema["format"].append(format_entry)
+    pipeline.schema["description"].append(description_entry)
 
     set_task_model_values(task_obj, pipeline)
 
@@ -127,32 +187,3 @@ def pipeline_executor(pipeline):
     print("Data after pipeline execution\n", pipeline.data)
     pipeline.model.save()
     return
-
-
-def get_task_names(task_obj_list):
-    task_names = []
-    for obj in task_obj_list:
-        task_names.append(obj.task_name)
-    return task_names
-
-
-def get_task_contexts(task_obj_list):
-    contexts = []
-    for obj in task_obj_list:
-        context = json.loads(obj.context.replace('\'', '"'))
-        contexts.append(context)
-    return contexts
-
-
-def set_task_model_values(task, pipeline):
-    task.output_id = '1'
-    # create_resource(
-    #     {'package_id': pipeline.model.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
-    print({'package_id': task.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
-    task.status = "Done"
-    task.save()
-
-
-def send_error_to_prefect_cloud(e:Exception):
-    prefect_logger = get_run_logger()
-    prefect_logger.error(str(e))

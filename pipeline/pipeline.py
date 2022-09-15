@@ -15,6 +15,7 @@ class Pipeline(object):
         self.model = model
         self.data = data
         self._commands = list()
+        self.schema = list()
 
     def add(self, tasks):
         self._commands.append(tasks)
