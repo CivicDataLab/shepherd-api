@@ -103,6 +103,7 @@ def update_resource(res_dict):
     data = res_dict['data']
     data.to_csv('data110.csv')
     schema = res_dict['schema']
+    schema = json.dumps(schema)
     file_path = 'data110.csv'
     file = open(file_path, 'rb')
     variables = {"file": None}
