@@ -104,6 +104,7 @@ def update_resource(res_dict):
     data.to_csv('data110.csv')
     schema = res_dict['schema']
     schema = json.dumps(schema)
+    schema = schema.replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
     file_path = 'data110.csv'
     file = open(file_path, 'rb')
     variables = {"file": None}
