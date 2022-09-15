@@ -50,9 +50,19 @@ def pipeline_filter(request):
     pipeline_data = list(Pipeline.objects.filter(dataset_id=dataset_id))
     resp_list = []
     for each in pipeline_data:
+        p_id = each.pipeline_id
+        task_data = list(Task.objects.filter(Pipeline_id=p_id))
+        tasks_list = []
+        for task in task_data:
+            t_data = {
+                'task_id': task.task_id, 'task_name': task.task_name, 'context': task.context,
+                'status': task.status, 'order_no': task.order_no, 'created_at': task.created_at,
+                'result_url': task.result_url, 'output_id': task.output_id
+            }
+            tasks_list.append(t_data)
         data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
                 'output_id': each.output_id, 'created_at': each.created_at,
-                'status': each.status, 'resource_id': each.resource_id
+                'status': each.status, 'resource_id': each.resource_id, 'tasks': tasks_list
                 }
         resp_list.append(data)
 
