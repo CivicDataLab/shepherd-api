@@ -1,4 +1,5 @@
 import json
+import os
 import random
 
 import ckanapi
@@ -60,17 +61,42 @@ def upload_resource(res_dict):
 
 def create_resource(res_dict):
     print("creating the resource..")
-    resource_name = res_dict['resource_name']
+    res_details = res_dict['res_details']
+    resource_name = res_details['data']['resource']['title']
     data = res_dict['data']
     schema = res_dict['schema']
+    schema = json.dumps(schema)
+    schema = schema.replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
     description = "Executing " + resource_name + " on user provided data"
-    data.to_csv('data110.csv')
-    file_path = 'data110.csv'
+    if os.path.isfile(resource_name + ".json"):
+        file_path = resource_name + ".json"
+        file_format = "json"
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'json'))
+        ]
+    elif os.path.isfile(resource_name + ".xml"):
+        file_path = resource_name + ".xml"
+        file_format = "xml"
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'xml'))
+        ]
+    elif os.path.isfile(resource_name + ".pdf"):
+        file_path = resource_name + ".pdf"
+        file_format = "pdf"
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'pdf'))
+        ]
+    else:
+        data.to_csv('data110.csv', index=False)
+        file_path = 'data110.csv'
+        file_format = "CSV"
+        files = [
+            ('0', ('data110.csv', open(file_path, 'rb'), 'text/csv'))
+        ]
     query = f"""mutation mutation_create_resource($file: Upload!) {{create_resource(
                 resource_data: {{file: $file, title:"{resource_name}", description:"{description}",    
-                dataset: "5", remote_url: "",  format: "CSV", status : "",
-                schema: {{key: "{schema['key']}", format:"{schema['format']}", 
-                          description:"{schema['description']}"}}
+                dataset: "5", remote_url: "",  format: "{file_format}", status : "",
+                schema: {schema}
                 }})
                 {{
                 resource {{ id }}
@@ -86,10 +112,7 @@ def create_resource(res_dict):
         "operationName": "mutation_create_resource"
     })
 
-    files = [
-        ('0', ('data110.csv', open(file_path, 'rb'), 'text/csv'))
-    ]
-    # return random.randint(1, 1000000)
+
 
     response = requests.post('http://idpbe.civicdatalab.in/graphql', data={"operations": operations,
                                                                            "map": map}, files=files)
@@ -101,37 +124,20 @@ def create_resource(res_dict):
 def update_resource(res_dict):
     res_details = res_dict['res_details']
     data = res_dict['data']
-    data.to_csv('data110.csv')
+    data.to_csv('data110.csv', index=False)
     schema = res_dict['schema']
     schema = json.dumps(schema)
     schema = schema.replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
+
+
     file_path = 'data110.csv'
     file = open(file_path, 'rb')
     variables = {"file": None}
     map = json.dumps({"0": ["variables.file"]})
-
-    # query = f"""
-    #         mutation($file: Upload!) {{update_resource(resource_data: {{
-    #         id:{res_details['data']['resource']['id']},
-    #         title:"{res_dict['resource_name']}",
-    #         description:"{res_details['data']['resource']['description']}",
-    #         file:   $file,
-    #         dataset:"{res_details['data']['resource']['dataset']['id']}",
-    #         status:"{res_details['data']['resource']['status']}",
-    #         format:"{res_details['data']['resource']['format']}",
-    #         remote_url:"{res_details['data']['resource']['remote_url']}",
-    #         schema:{{key: "{schema['key']}", format:"{schema['format']}",description:"{schema['description']}"}},
-    #         }})
-    #         {{
-    #         success
-    #         errors
-    #         resource {{ id }}
-    #     }}
-    #     }}"""
     query = f"""
                 mutation($file: Upload!) {{update_resource(resource_data: {{
                 id:{res_details['data']['resource']['id']}, 
-                title:"{res_dict['resource_name']}", 
+                title:"{res_details['data']['resource']['title']}", 
                 description:"{res_details['data']['resource']['description']}", 
                 file:   $file,  
                 dataset:"{res_details['data']['resource']['dataset']['id']}",

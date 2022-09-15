@@ -26,6 +26,13 @@ def set_task_model_values(task, pipeline):
     task.status = "Done"
     task.save()
 
+
+def populate_task_schema(key_entry, format_entry, description_entry):
+    schema_dict = {"key": key_entry, "format": format_entry, "description": description_entry}
+    return schema_dict
+
+
 def send_error_to_prefect_cloud(e:Exception):
     prefect_logger = get_run_logger()
     prefect_logger.error(str(e))
+

@@ -9,7 +9,9 @@ class Pipeline(models.Model):
     pipeline_name  = models.CharField(max_length=100, default="")
     output_id      = models.CharField(max_length=200, default="")
     created_at     = models.DateTimeField(default=datetime.datetime.now) 
-    status         = models.CharField(max_length=50) 
+    status         = models.CharField(max_length=50)
+    dataset_id     = models.CharField(max_length=50)
+    resource_id    = models.CharField(max_length=50)
     # tasks = list()
 
 class Task(models.Model):

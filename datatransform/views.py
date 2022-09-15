@@ -45,6 +45,22 @@ def transformer_list(request):
     return JsonResponse(context, safe=False)
 
 
+def pipeline_filter(request):
+    dataset_id = request.GET.get('datasetId', None)
+    pipeline_data = list(Pipeline.objects.filter(dataset_id=dataset_id))
+    resp_list = []
+    for each in pipeline_data:
+        data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
+                'output_id': each.output_id, 'created_at': each.created_at,
+                'status': each.status, 'resource_id': each.resource_id
+                }
+        resp_list.append(data)
+
+    context = {"result": resp_list, "Success": True}
+
+    return JsonResponse(context, safe=False)
+
+
 def pipe_list(request):
     task_data = list(Task.objects.all().values())
 
@@ -146,9 +162,9 @@ def res_transform(request):
         # org_name = post_data.get('org_name', None)
         res_id = post_data.get('res_id', None)
         db_action = post_data.get('db_action', None)
-        pipeline_name = str(res_id) + "-" + str(uuid.uuid4())[:8]
-        # data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
-        data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
+        pipeline_name = post_data.get('pipeline_name', None)
+        data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
+        # data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
         query = f"""{{
                     resource(resource_id: {res_id}) {{
                     id
@@ -190,6 +206,7 @@ def res_transform(request):
         request = requests.post('http://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
         response = json.loads(request.text)
         print(response)
+        dataset_id = response['data']['resource']['dataset']['id']
         #data_url = response['data']['resource']['remote_url']
         print(data_url)
         transformers_list = [i for i in transformers_list if i]
@@ -203,7 +220,7 @@ def res_transform(request):
             data = None
             context = {"result": "NO data!!", "Success": False}
             return JsonResponse(context, safe=False)
-        p = Pipeline(status="Created", pipeline_name=pipeline_name)
+        p = Pipeline(status="Created", pipeline_name=pipeline_name, dataset_id=dataset_id, resource_id=res_id)
 
         # p.output_id = upload_dataset(pipeline_name, org_name)
         p.save()

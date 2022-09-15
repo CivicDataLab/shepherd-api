@@ -12,7 +12,6 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
     data = Pipeline.objects.get(pk=pipeline_id)
-    print(data.pipeline_name)
     try:
         data = None
         try:
@@ -31,10 +30,12 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         def execution_from_model(task):
             new_pipeline.add(task)
 
+        new_pipeline.schema = res_details['data']['resource']['schema']
         [execution_from_model(task) for task in tasks]
         print("data recieved\n", new_pipeline.data)
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         print("schema----",new_pipeline.schema)
+        print("got schema from query...", new_pipeline.schema)
         if db_action == "update":
             update_resource(
             {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
@@ -42,7 +43,7 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         if db_action == "create":
             id = create_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'data': new_pipeline.data, 'schema': new_pipeline.schema}
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema}
             )
             print("res_id created at...",id)
         return
