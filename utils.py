@@ -175,7 +175,7 @@ def update_resource(res_dict):
                 file:   $file,  
                 dataset:"{res_details['data']['resource']['dataset']['id']}",
                 status:"{res_details['data']['resource']['status']}", 
-                format:"{res_details['data']['resource']['format']}", 
+                format:"{file_format}", 
                 remote_url:"{res_details['data']['resource']['remote_url']}", 
                 schema:{schema},
                 }})
