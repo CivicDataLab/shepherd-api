@@ -1,4 +1,5 @@
 import json
+import os
 
 import requests
 from background_task import background
@@ -7,7 +8,7 @@ from datatransform.models import Pipeline
 
 
 @background
-def api_resource_query_task(p_id, api_source_id):
+def api_resource_query_task(p_id, api_source_id, request_id):
     print(api_source_id)
     pipeline_object = Pipeline.objects.get(pk=p_id)
     query =  f"""{{
@@ -94,6 +95,57 @@ def api_resource_query_task(p_id, api_source_id):
             pwd_key = auth_credentials[1]['key']
             pwd = auth_credentials[1]["value"]
             param = {uname_key: uname, pwd_key:pwd}
+    response_type = response['data']['api_resource']['response_type']
+
     api_request = requests.get(base_url + "/" + url_path, headers=header, params=param)
-    api_response = json.loads(api_request.text)
+    api_response = api_request.text
+    if response_type == "JSON":
+        print("in if...")
+        with open(str(p_id) + "-data.json", 'w') as f:
+            f.write(api_response)
+        file_path = str(p_id) + "-data.json"
+    if response_type == "CSV":
+        with open(str(p_id) + "-data.csv", 'w') as f:
+            f.write(api_response)
+        file_path = str(p_id) + "-data.csv"
+    status = "FETCHED"
+    files = [
+        ('0', (file_path, open(file_path, 'rb'), response_type))
+    ]
+    variables = {"file": None}
+
+    map = json.dumps({"0": ["variables.file"]})
+
+    file_upload_query = f"""
+  mutation($file: Upload!) {{update_data_request(data_request: {{
+  id: "{request_id}",
+  status: {status},
+  file: $file
+  }}) {{
+    success
+    errors
+    data_request {{
+      id
+      status
+      description
+      remark
+      purpose
+      file
+    }}
+  }}
+}}"""
+    print(file_upload_query)
+    operations = json.dumps({
+        "query": file_upload_query,
+        "variables": variables
+    })
+    headers = {}
+    try:
+        response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
+                                 files=files, headers=headers)
+        print(response.text)
+        os.delete(file_path)
+    except Exception as e:
+        print(e)
+
     # pipeline_object.status = "Done"

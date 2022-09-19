@@ -269,12 +269,13 @@ def api_source_query(request):
     if request.method == 'GET':
         print("ION IFFFFFF")
         api_source_id = request.GET.get('api_source_id', None)
+        request_id = request.GET.get('request_id', None)
         pipeline_name = api_source_id + "-" + str(uuid.uuid4())
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
         p.save()
 
         p_id = p.pk
-        api_resource_query_task(p_id, api_source_id)
+        api_resource_query_task(p_id, api_source_id, request_id)
 
 
         context = {"result": p_id, "Success": True}
