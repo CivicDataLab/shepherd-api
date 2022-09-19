@@ -165,7 +165,7 @@ def aggregate(context, pipeline, task_obj):
 def query_data_resource(context, pipeline, task_obj):
     columns = context['columns']
     num_rows = context["rows"]
-
+    columns = columns.split(",")
     if len(columns) == 0:
         column_selected_df = pipeline.data
     else:

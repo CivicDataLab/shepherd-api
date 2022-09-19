@@ -73,9 +73,9 @@ def create_resource(res_dict):
     if os.path.isfile(res_name_for_file + ".json"):
         file_path = res_name_for_file + ".json"
         file_format = "json"
-        os.rename(file_path, resource_name+ ".json")
+        os.rename(file_path, resource_name + ".json")
         files = [
-            ('0', (resource_name+ ".json", open(resource_name+ ".json", 'rb'), 'json'))
+            ('0', (resource_name + ".json", open(resource_name + ".json", 'rb'), 'json'))
         ]
     elif os.path.isfile(res_name_for_file + ".xml"):
         file_path = res_name_for_file + ".xml"
