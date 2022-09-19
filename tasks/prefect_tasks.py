@@ -125,18 +125,19 @@ def change_format(context, pipeline, task_obj):
     # TODO - decide on the context contents
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
-    if file_format == "xml" or "XML":
+    print("FORMAAAAAAT", file_format)
+    if file_format == "xml" or file_format =="XML":
         data_string = pipeline.data.to_json(orient='records')
         json_data = json.loads(data_string)
         xml_data = json2xml.Json2xml(json_data).to_xml()
         print(xml_data)
         with open(result_file_name + '.xml', 'w') as f:
             f.write(xml_data)
-    elif file_format == "pdf" or "PDF":
+    elif file_format == "pdf" or file_format == "PDF":
         pipeline.data.to_html("data.html")
         pdfkit.from_file("data.html", result_file_name + ".pdf")
         os.remove('data.html')
-    elif file_format == "json" or "JSON":
+    elif file_format == "json" or file_format == "JSON":
         data_string = pipeline.data.to_json(orient='records')
         with open(result_file_name + ".json", "w") as f:
             f.write(data_string)

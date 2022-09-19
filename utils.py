@@ -69,23 +69,27 @@ def create_resource(res_dict):
     schema = schema.replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
     print("schema in create resource...))))", schema)
     description = "Executing " + resource_name + " on user provided data"
-    if os.path.isfile(resource_name + ".json"):
-        file_path = resource_name + ".json"
+    res_name_for_file = res_dict['resource_name']
+    if os.path.isfile(res_name_for_file + ".json"):
+        file_path = res_name_for_file + ".json"
         file_format = "json"
+        os.rename(file_path, resource_name+ ".json")
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'json'))
+            ('0', (resource_name+ ".json", open(resource_name+ ".json", 'rb'), 'json'))
         ]
-    elif os.path.isfile(resource_name + ".xml"):
-        file_path = resource_name + ".xml"
+    elif os.path.isfile(res_name_for_file + ".xml"):
+        file_path = res_name_for_file + ".xml"
         file_format = "xml"
+        os.rename(file_path, resource_name + ".xml")
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'xml'))
+            ('0', (resource_name+ ".xml", open(resource_name+ ".xml", 'rb'), 'xml'))
         ]
-    elif os.path.isfile(resource_name + ".pdf"):
-        file_path = resource_name + ".pdf"
+    elif os.path.isfile(res_name_for_file + ".pdf"):
+        file_path = res_name_for_file + ".pdf"
         file_format = "pdf"
+        os.rename(file_path, resource_name + ".pdf")
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'pdf'))
+            ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
     else:
         data.to_csv(resource_name + ".csv", index=False)
@@ -128,24 +132,27 @@ def update_resource(res_dict):
     schema = res_dict['schema']
     schema = json.dumps(schema)
     schema = schema.replace('"id":', 'id:').replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
-    print("schema in update resource....^^^^", schema)
-    if os.path.isfile(resource_name + ".json"):
-        file_path = resource_name + ".json"
+    res_name_for_file = res_dict['resource_name']
+    if os.path.isfile(res_name_for_file + ".json"):
+        file_path = res_name_for_file + ".json"
         file_format = "json"
+        os.rename(file_path, resource_name + ".json")
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'json'))
+            ('0', (resource_name + ".json", open(resource_name + ".json", 'rb'), 'json'))
         ]
-    elif os.path.isfile(resource_name + ".xml"):
-        file_path = resource_name + ".xml"
+    elif os.path.isfile(res_name_for_file + ".xml"):
+        file_path = res_name_for_file + ".xml"
         file_format = "xml"
+        os.rename(file_path, resource_name + ".xml")
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'xml'))
+            ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
-    elif os.path.isfile(resource_name + ".pdf"):
-        file_path = resource_name + ".pdf"
+    elif os.path.isfile(res_name_for_file + ".pdf"):
+        file_path = res_name_for_file + ".pdf"
         file_format = "pdf"
+        os.rename(file_path, resource_name + ".pdf")
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'pdf'))
+            ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
     else:
         data.to_csv(resource_name + ".csv", index=False)
