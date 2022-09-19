@@ -1,10 +1,8 @@
-from io import StringIO
-
 import pika
 import requests
 
+from pipeline.api_resource_query_bg import api_resource_query_task
 from .models import Task, Pipeline
-
 # Create your views here.
 
 from django.http import JsonResponse, HttpResponse
@@ -185,6 +183,7 @@ def res_transform(request):
                     remote_url
                     format
                     schema{{
+                    id
                     key
                     format
                     description
@@ -213,7 +212,7 @@ def res_transform(request):
                 }}
                 """
         headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-        request = requests.post('http://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+        request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
         response = json.loads(request.text)
         print(response)
         dataset_id = response['data']['resource']['dataset']['id']
@@ -265,6 +264,23 @@ def res_transform(request):
         connection.close()
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
+
+def api_source_query(request):
+    if request.method == 'GET':
+        print("ION IFFFFFF")
+        api_source_id = request.GET.get('api_source_id', None)
+        pipeline_name = api_source_id + "-" + str(uuid.uuid4())
+        p = Pipeline(status="Created", pipeline_name=pipeline_name)
+        p.save()
+
+        p_id = p.pk
+        api_resource_query_task(p_id, api_source_id)
+
+
+        context = {"result": p_id, "Success": True}
+        return JsonResponse(context, safe=False)
+
+
 
 
 def custom_data_viewer(request):

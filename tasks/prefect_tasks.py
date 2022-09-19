@@ -32,13 +32,15 @@ def skip_column(context, pipeline, task_obj):
     # pipeline.schema.append(schema)
     try:
         pipeline.data = pipeline.data.drop(column, axis=1)
+        for col in column:
+            for sc in pipeline.schema:
+                if sc['key'] == col:
+                    sc['key'] = ""
+                    sc['format'] = ""
+                    sc['description'] = ""
     except Exception as e:
         send_error_to_prefect_cloud(e)
 
-    for col in column:
-        for sc in pipeline.schema:
-            if sc['key'] == col:
-                pipeline.schema.remove(sc)
     set_task_model_values(task_obj, pipeline)
 
 
@@ -59,21 +61,33 @@ def merge_columns(context, pipeline, task_obj):
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
             .astype(str)
         pipeline.data = pipeline.data.drop([column1, column2], axis=1)
+
+        """ setting up the schema after task"""
+        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
+        names_types_dict = data_schema.dtypes.astype(str).to_dict()
+        new_col_format = names_types_dict[output_column]
+        for sc in pipeline.schema:
+            if sc['key'] == column1:
+                sc['key'] = ""
+                sc['format'] = ""
+                sc['description'] = ""
+                print(sc ," got resetted..$$$$$")
+            if sc['key'] == column2:
+                sc['key'] = ""
+                sc['format'] = ""
+                sc['description'] = ""
+                print(sc ," got resetted..$$$$$")
+        pipeline.schema.append({
+            "key": output_column, "format": new_col_format,
+            "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
+                           + pipeline.model.pipeline_name
+        })
+
     except Exception as e:
         send_error_to_prefect_cloud(e)
 
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
-    new_col_format = names_types_dict[output_column]
-    for sc in pipeline.schema:
-        if sc['key'] == column1 or sc['key'] == column2:
-            pipeline.schema.remove(sc)
-    pipeline.schema.append({
-        "key" : output_column, "format" : new_col_format,
-        "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
-                       + pipeline.model.pipeline_name
-    })
+
     set_task_model_values(task_obj, pipeline)
 
 
@@ -126,10 +140,6 @@ def change_format(context, pipeline, task_obj):
         data_string = pipeline.data.to_json(orient='records')
         with open(result_file_name + ".json", "w") as f:
             f.write(data_string)
-    key_entry = ""
-    format_entry = file_format
-    description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    pipeline.schema.append(populate_task_schema(key_entry, format_entry, description_entry))
     set_task_model_values(task_obj, pipeline)
 
 
@@ -145,29 +155,25 @@ def aggregate(context, pipeline, task_obj):
                                                convert_integer=True, convert_boolean=True, convert_floating=True)
     names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
-    key_entry = ""
-    format_entry = ""
-    for col in columns:
-        key_entry = key_entry + col + ","
-        format_entry = format_entry + names_types_dict[col] + ","
-
-    description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-
-    pipeline.schema.append(populate_task_schema(key_entry, format_entry, description_entry))
-
     pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
+    print("@@@@@@@@",pipeline.data)
     set_task_model_values(task_obj, pipeline)
 
 
 @task
 def query_data_resource(context, pipeline, task_obj):
     columns = context['columns']
-    num_rows = int(context["rows"])
+    num_rows = context["rows"]
 
     if len(columns) == 0:
         column_selected_df = pipeline.data
     else:
         column_selected_df = pipeline.data.loc[:, pipeline.data.columns.isin(columns)]
+        for sc in pipeline.schema:
+            if sc["key"] not in columns:
+                sc["key"] = ""
+                sc["format"] = ""
+                sc["description"] = ""
     # if row length is not specified return all rows
     if num_rows == "" or int(num_rows) > len(column_selected_df):
         final_df = column_selected_df
@@ -180,15 +186,6 @@ def query_data_resource(context, pipeline, task_obj):
                                                convert_integer=True, convert_boolean=True, convert_floating=True)
     names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
-    key_entry = ""
-    format_entry = ""
-    for col in columns:
-        key_entry = key_entry + col + ","
-        format_entry = format_entry + names_types_dict[col] + ","
-
-    description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-
-    pipeline.schema.append(populate_task_schema(key_entry, format_entry, description_entry))
 
     set_task_model_values(task_obj, pipeline)
 
