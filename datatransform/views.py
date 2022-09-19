@@ -22,7 +22,7 @@ def transformer_list(request):
             {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
         ]},
         {"name": "change_format", "context": [
-            {"name": "format", "type": "string", "desc": "PDF/JSON/XML"}]},
+            {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
         {"name": "anonymize", "context": [
             {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
             {"name": "replace_val", "type": "string", "desc": "Replacement string"},
