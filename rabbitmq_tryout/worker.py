@@ -1,34 +1,84 @@
-import json
+import pika
+import sys
 
-import requests
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host='localhost'))
 
-cookies = {
-    'ASP.NET_SessionId': 'q0abtq2zxuixfhnkas3foxfo',
-}
+channel = connection.channel()
+channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+result = channel.queue_declare('', exclusive=True)
+queue_name = result.method.queue
 
-headers = {
-    'Accept': 'application/json, text/javascript, /; q=0.01',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Connection': 'keep-alive',
-    # Already added when you pass json=
-    # 'Content-Type': 'application/json',
-    # 'Cookie': 'ASP.NET_SessionId=q0abtq2zxuixfhnkas3foxfo',
-    'Origin': 'https://onlineasdma.assam.gov.in',
-    'Referer': 'https://onlineasdma.assam.gov.in/gis/Forum/Question/MODULES/GIS_Console/GIS_Console.aspx',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-origin',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.42',
-    'sec-ch-ua': '"Microsoft Edge";v="105", " Not;A Brand";v="99", "Chromium";v="105"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"',
-}
+print("queue name----", queue_name)
+binding_keys = ["merge_column", "skip_column"]
 
-json_data = {
-    'id': '59',
-    'districtid': '1,2,28,3,4,29,5,6,8,21,10,11,12,30,13,14,15,16,17,18,31,20,22,23,24,25,32,27,33,19,26,7,9',
-    'layerids': '50',
-}
+for binding_key in binding_keys:
+     channel.queue_bind(
+         exchange='logs_topic', queue=queue_name, routing_key=binding_key)
 
-response = requests.post('https://onlineasdma.assam.gov.in/asdmaservices/Service2.svc/Fit_Layer', cookies=cookies, headers=headers, json=json_data).text
-print()
+def fib(n):
+    if n == 0:
+        return 0
+    elif n == 1:
+        return 1
+    else:
+        return fib(n - 1) + fib(n - 2)
+
+
+def on_request(ch, method, props, body):
+    print(body)
+    n = 0
+    print(" [.] fib(%s)" % n)
+    response = fib(n)
+
+    ch.basic_publish(exchange='',
+                     routing_key=props.reply_to,
+                     properties=pika.BasicProperties(correlation_id = \
+                                                         props.correlation_id),
+                     body=str(response))
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+channel.basic_qos(prefetch_count=1)
+channel.basic_consume(queue=queue_name, on_message_callback=on_request)
+
+print(" [x] Awaiting RPC requests")
+channel.start_consuming()
+
+
+
+
+
+
+
+
+
+
+
+
+
+# connection = pika.BlockingConnection(
+#     pika.ConnectionParameters(host='localhost'))
+# channel = connection.channel()
+#
+# channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+#
+# result = channel.queue_declare('', exclusive=True)
+# queue_name = result.method.queue
+# print(queue_name)
+# binding_keys = ["merge_column", "skip_column"]
+#
+# for binding_key in binding_keys:
+#     channel.queue_bind(
+#         exchange='logs_topic', queue=queue_name, routing_key=binding_key)
+#
+# print(' [*] Waiting for logs. To exit press CTRL+C')
+#
+#
+# def callback(ch, method, properties, body):
+#     print(" [x] %r:%r" % (method.routing_key, body))
+#
+#
+# channel.basic_consume(
+#     queue=queue_name, on_message_callback=callback, auto_ack=True)
+#
+# channel.start_consuming()

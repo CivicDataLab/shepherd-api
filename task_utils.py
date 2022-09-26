@@ -1,5 +1,6 @@
 import json
 
+import pika
 from prefect import get_run_logger
 
 
@@ -36,3 +37,19 @@ def send_error_to_prefect_cloud(e:Exception):
     prefect_logger = get_run_logger()
     prefect_logger.error(str(e))
 
+
+def task_publisher(task_name, context):
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+
+    routing_key = task_name
+    message_body = {
+        'context': context
+        }
+    channel.basic_publish(
+        exchange='logs_topic', routing_key=routing_key, body=json.dumps(message_body))
+    print(" [x] Sent %r:%r" % (routing_key, message_body))
+    connection.close()

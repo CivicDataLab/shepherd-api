@@ -14,12 +14,14 @@ import uuid
 
 
 def transformer_list(request):
+    #field_single
+    # field_multi
     transformers = [
         {"name": "skip_column", "context": [
-            {"name": "columns", "type": "string", "desc": "Please enter comma separated column names to be deleted"}]},
+            {"name": "columns", "type": "field_multi", "desc": "Please select column names to be deleted"}]},
         {"name": "merge_columns", "context": [
-            {"name": "column1", "type": "string", "desc": "Please enter first column name"},
-            {"name": "column2", "type": "string", "desc": "Please enter second column name"},
+            {"name": "column1", "type": "field_single", "desc": "Please select first column name"},
+            {"name": "column2", "type": "field_single", "desc": "Please select second column name"},
             {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
             {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
         ]},
@@ -28,16 +30,12 @@ def transformer_list(request):
         {"name": "anonymize", "context": [
             {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
             {"name": "replace_val", "type": "string", "desc": "Replacement string"},
-            {"name": "column", "type": "string", "desc": "Desired column"}
+            {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"}
         ]},
         {"name": "aggregate", "context": [
             {"name": "index", "type": "string", "desc": "Field that is needed as index"},
-            {"name": "columns", "type": "string", "desc": "CSV of column names"},
+            {"name": "columns", "type": "field_multi", "desc": "Select column names"},
             {"name": "values", "type": "string", "desc": "values"}
-        ]},
-        {"name": "query_data_resource", "context": [
-            {"name": "columns", "type": "string", "desc": "Enter csv columns to be queried"},
-            {"name": "rows", "type": "string", "desc": "Enter num of rows required"}
         ]}
     ]
 

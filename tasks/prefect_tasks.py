@@ -10,36 +10,22 @@ from task_utils import *
 
 @task
 def skip_column(context, pipeline, task_obj):
-    column = context['columns']
-    col = column
-    if not isinstance(column, list):
-        column = list()
-        column.append(col)
-
-    # data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-    #                                            convert_integer=True, convert_boolean=True, convert_floating=True)
-    #
-    # names_types_dict = data_schema.dtypes.astype(str).to_dict()
-    # key_entry = ""
-    # format_entry = ""
-    # for col in column:
-    #     key_entry = key_entry + col + ","
-    #     format_entry = format_entry + names_types_dict[col] + ","
-    # key_entry = key_entry.rstrip()
-    # format_entry = format_entry.rstrip()
-    # description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    # schema = populate_task_schema(key_entry, format_entry, description_entry)
-    # pipeline.schema.append(schema)
-    try:
-        pipeline.data = pipeline.data.drop(column, axis=1)
-        for col in column:
-            for sc in pipeline.schema:
-                if sc['key'] == col:
-                    sc['key'] = ""
-                    sc['format'] = ""
-                    sc['description'] = ""
-    except Exception as e:
-        send_error_to_prefect_cloud(e)
+    task_publisher("skip_column", context)
+    # column = context['columns']
+    # col = column
+    # if not isinstance(column, list):
+    #     column = list()
+    #     column.append(col)
+    # try:
+    #     pipeline.data = pipeline.data.drop(column, axis=1)
+    #     for col in column:
+    #         for sc in pipeline.schema:
+    #             if sc['key'] == col:
+    #                 sc['key'] = ""
+    #                 sc['format'] = ""
+    #                 sc['description'] = ""
+    # except Exception as e:
+    #     send_error_to_prefect_cloud(e)
 
     set_task_model_values(task_obj, pipeline)
 
@@ -48,13 +34,6 @@ def skip_column(context, pipeline, task_obj):
 def merge_columns(context, pipeline, task_obj):
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
     separator = context['separator']
-
-    # key_entry_list = str(column1) + ", " + str(column2)
-    # format_1 = names_types_dict[column1]
-    # format_2 = names_types_dict[column2]
-    # format_entry = str(format_1) + ", " + str(format_2)
-    # description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    # pipeline.schema.append(populate_task_schema(key_entry_list, format_entry, description_entry))
 
     try:
         print("inside try of merge_col")

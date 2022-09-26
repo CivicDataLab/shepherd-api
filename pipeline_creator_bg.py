@@ -14,8 +14,6 @@ from datatransform.models import Pipeline
 @background(queue="create_pipeline")
 def create_pipeline(post_data, pipeline_name):
     p = Pipeline(status="Requested", pipeline_name=pipeline_name)
-    # p = Pipeline(status="Requested", pipeline_name=pipeline_name, dataset_id=dataset_id, resource_id=res_id)
-    # p.output_id = upload_dataset(pipeline_name, org_name)
     p.save()
 
     p_id = p.pk
@@ -26,7 +24,6 @@ def create_pipeline(post_data, pipeline_name):
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
     data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
-    # data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
     query = f"""{{
                        resource(resource_id: {res_id}) {{
                        id
