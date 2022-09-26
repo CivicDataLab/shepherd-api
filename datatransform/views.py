@@ -33,7 +33,7 @@ def transformer_list(request):
         {"name": "aggregate", "context": [
             {"name": "index", "type": "field_single", "desc": "Field that is needed as index"},
             {"name": "columns", "type": "field_multi", "desc": "Select column names"},
-            {"name": "values", "type": "string", "desc": "values"}
+            {"name": "values", "type": "field_multi", "desc": "values"}
         ]}
     ]
 
