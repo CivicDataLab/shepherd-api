@@ -7,11 +7,12 @@ from background_task import background
 from datatransform.models import Pipeline
 
 
-@background
+@background(queue="api_res_operation")
 def api_resource_query_task(p_id, api_source_id, request_id):
     print(api_source_id)
     pipeline_object = Pipeline.objects.get(pk=p_id)
-    query =  f"""{{
+    pipeline_object.status = "In Progress"
+    query = f"""{{
   api_resource(api_resource_id: {api_source_id}) {{
     id
     title
@@ -144,8 +145,10 @@ def api_resource_query_task(p_id, api_source_id, request_id):
         response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
                                  files=files, headers=headers)
         print(response.text)
-        os.delete(file_path)
     except Exception as e:
         print(e)
+    finally:
+        files[0][1][1].close()
+        os.remove(file_path)
+        pipeline_object.status = "Done"
 
-    # pipeline_object.status = "Done"

@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from fileinput import close
 
 import ckanapi
 import pandas as pd
@@ -60,20 +61,20 @@ def upload_resource(res_dict):
 
 
 def create_resource(res_dict):
-    print("creating the resource..")
     res_details = res_dict['res_details']
     resource_name = res_details['data']['resource']['title']
     data = res_dict['data']
     schema = res_dict['schema']
     schema = json.dumps(schema)
-    schema = schema.replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
-    print("schema in create resource...))))", schema)
+    schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
+        '"description":', 'description:')
     description = "Executing " + resource_name + " on user provided data"
     res_name_for_file = res_dict['resource_name']
     if os.path.isfile(res_name_for_file + ".json"):
         file_path = res_name_for_file + ".json"
         file_format = "json"
         os.rename(file_path, resource_name + ".json")
+        file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".json", open(resource_name + ".json", 'rb'), 'json'))
         ]
@@ -81,13 +82,15 @@ def create_resource(res_dict):
         file_path = res_name_for_file + ".xml"
         file_format = "xml"
         os.rename(file_path, resource_name + ".xml")
+        file_path = resource_name + ".json"
         files = [
-            ('0', (resource_name+ ".xml", open(resource_name+ ".xml", 'rb'), 'xml'))
+            ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
     elif os.path.isfile(res_name_for_file + ".pdf"):
         file_path = res_name_for_file + ".pdf"
         file_format = "pdf"
         os.rename(file_path, resource_name + ".pdf")
+        file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
@@ -108,7 +111,6 @@ def create_resource(res_dict):
                 }}
                 }}
                 """
-    print(query)
     variables = {"file": None}
     map = json.dumps({"0": ["variables.file"]})
     operations = json.dumps({
@@ -116,27 +118,33 @@ def create_resource(res_dict):
         "variables": variables,
         "operationName": "mutation_create_resource"
     })
-
-    response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations,
-                                                                           "map": map}, files=files)
-    response_json = json.loads(response.text)
-    print(response_json)
-    return response_json['data']['create_resource']['resource']['id']
+    try:
+        response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations,
+                                                                                "map": map}, files=files)
+        response_json = json.loads(response.text)
+        print(response_json)
+        return response_json['data']['create_resource']['resource']['id']
+    except Exception as e:
+        print(e)
+    finally:
+        files[0][1][1].close()
+        os.remove(file_path)
 
 
 def update_resource(res_dict):
     res_details = res_dict['res_details']
     resource_name = res_details['data']['resource']['title']
     data = res_dict['data']
-    data.to_csv('data110.csv', index=False)
     schema = res_dict['schema']
     schema = json.dumps(schema)
-    schema = schema.replace('"id":', 'id:').replace('"key"', 'key').replace('"format"', 'format').replace('"description"', 'description')
+    schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
+        '"description":', 'description:')
     res_name_for_file = res_dict['resource_name']
     if os.path.isfile(res_name_for_file + ".json"):
         file_path = res_name_for_file + ".json"
         file_format = "json"
         os.rename(file_path, resource_name + ".json")
+        file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".json", open(resource_name + ".json", 'rb'), 'json'))
         ]
@@ -144,6 +152,7 @@ def update_resource(res_dict):
         file_path = res_name_for_file + ".xml"
         file_format = "xml"
         os.rename(file_path, resource_name + ".xml")
+        file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
@@ -151,6 +160,7 @@ def update_resource(res_dict):
         file_path = res_name_for_file + ".pdf"
         file_format = "pdf"
         os.rename(file_path, resource_name + ".pdf")
+        file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
@@ -163,8 +173,6 @@ def update_resource(res_dict):
         ]
 
     variables = {"file": None}
-
-
 
     map = json.dumps({"0": ["variables.file"]})
     query = f"""
@@ -200,4 +208,6 @@ def update_resource(res_dict):
         print("updateresource.", response_json)
     except Exception as e:
         print(e)
-
+    finally:
+        files[0][1][1].close()
+        os.remove(file_path)

@@ -155,9 +155,15 @@ def aggregate(context, pipeline, task_obj):
     data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
                                                convert_integer=True, convert_boolean=True, convert_floating=True)
     names_types_dict = data_schema.dtypes.astype(str).to_dict()
-
-    pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
-    print("@@@@@@@@",pipeline.data)
+    try:
+        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
+        for sc in pipeline.schema:
+            if sc['key'] == index:
+                sc['key'] = ""
+                sc['format'] = ""
+                sc['description'] = ""
+    except:
+        pass
     set_task_model_values(task_obj, pipeline)
 
 
@@ -166,7 +172,7 @@ def query_data_resource(context, pipeline, task_obj):
     columns = context['columns']
     num_rows = context["rows"]
     columns = columns.split(",")
-    if len(columns) == 0:
+    if len(columns) == 1 and len(columns[0]) == 0:
         column_selected_df = pipeline.data
     else:
         column_selected_df = pipeline.data.loc[:, pipeline.data.columns.isin(columns)]

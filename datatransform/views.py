@@ -1,7 +1,9 @@
 import pika
 import requests
+from background_task.models import CompletedTask
 
 from pipeline.api_resource_query_bg import api_resource_query_task
+import pipeline_creator_bg
 from .models import Task, Pipeline
 # Create your views here.
 
@@ -97,7 +99,7 @@ def pipe_create(request):
         # print(request.body)
 
         post_data = json.loads(request.body.decode('utf-8'))
-        print("#####",post_data)
+        print("#####", post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         org_name = post_data.get('org_name', None)
@@ -145,12 +147,6 @@ def pipe_create(request):
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
-        # transformed_data = data.copy()
-        # all_stage_data = {0:transformed_data}
-
-        # transformed_data = globals()[trans_oper](transformed_data, trans_column, trans_operval)
-        # all_stage_data[index+1] = transformed_data
-
 
 def read_data(data_url):
     all_data = pd.read_csv(data_url)
@@ -161,113 +157,17 @@ def read_data(data_url):
 
 def res_transform(request):
     if request.method == 'POST':
-
-        # print("enter")
-        # print(request.body)
-
         post_data = json.loads(request.body.decode('utf-8'))
-        transformers_list = post_data.get('transformers_list', None)
-        # org_name = post_data.get('org_name', None)
-        res_id = post_data.get('res_id', None)
-        db_action = post_data.get('db_action', None)
         pipeline_name = post_data.get('pipeline_name', None)
-        data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
-        # data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
-        query = f"""{{
-                    resource(resource_id: {res_id}) {{
-                    id
-                    title
-                    description
-                    issued
-                    modified
-                    remote_url
-                    format
-                    schema{{
-                    id
-                    key
-                    format
-                    description
-                    }}
-                    file
-                    status
-                    dataset {{
-                      id
-                      title
-                      description
-                      issued
-                      remote_issued
-                      remote_modified
-                      period_from
-                      period_to
-                      update_frequency
-                      modified
-                      status
-                      remark
-                      funnel
-                      action
-                      access_type
-                      License
-                    }}
-                  }}
-                }}
-                """
-        headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-        request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
-        response = json.loads(request.text)
-        print(response)
-        dataset_id = response['data']['resource']['dataset']['id']
-        #data_url = response['data']['resource']['remote_url']
-        print(data_url)
-        transformers_list = [i for i in transformers_list if i]
-        try:
-            data = read_data(data_url)
-            # response = requests.get(data_url)
-            # data_txt = response.text
-            # data = pd.read_csv(StringIO(data_txt), sep=",")
-            # print(data)
-        except Exception as e:
-            data = None
-            context = {"result": "NO data!!", "Success": False}
-            return JsonResponse(context, safe=False)
-        p = Pipeline(status="Created", pipeline_name=pipeline_name, dataset_id=dataset_id, resource_id=res_id)
-
-        # p.output_id = upload_dataset(pipeline_name, org_name)
-        p.save()
-
-        p_id = p.pk
-
-        for _, each in enumerate(transformers_list):
-            task_name = each.get('name', None)
-            task_order_no = each.get('order_no', None)
-            task_context = each.get('context', None)
-
-            p = Pipeline.objects.get(pk=p_id)
-            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
-        temp_file_name = uuid.uuid4().hex
-        if not data.empty:
-            data.to_pickle(temp_file_name)
-        message_body = {
-            'p_id': p_id,
-            'temp_file_name': temp_file_name,
-            'res_details': response,
-            'db_action' : db_action
-        }
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
-        channel = connection.channel()
-
-        channel.queue_declare(queue='pipeline_ui_queue')
-        channel.basic_publish(exchange='',
-                              routing_key='pipeline_ui_queue',
-                              body=json.dumps(message_body))
-        print(" [x] Sent %r" % message_body)
-        connection.close()
-        context = {"result": p_id, "Success": True}
+        pipeline_creator_bg.create_pipeline(post_data, pipeline_name)
+        completed_tasks_qs = CompletedTask.objects.all()
+        print(completed_tasks_qs)
+        context = {"result": pipeline_name, "Success": True}
         return JsonResponse(context, safe=False)
+
 
 def api_source_query(request):
     if request.method == 'GET':
-        print("ION IFFFFFF")
         api_source_id = request.GET.get('api_source_id', None)
         request_id = request.GET.get('request_id', None)
         pipeline_name = api_source_id + "-" + str(uuid.uuid4())
@@ -277,11 +177,8 @@ def api_source_query(request):
         p_id = p.pk
         api_resource_query_task(p_id, api_source_id, request_id)
 
-
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
-
-
 
 
 def custom_data_viewer(request):
@@ -314,14 +211,3 @@ def custom_data_viewer(request):
         response['Content-Disposition'] = 'attachment; filename=export.csv'
         final_df.to_csv(path_or_buf=response)  # with other applicable parameters
         return response
-
-# def multiply(data, trans_column, trans_operval):
-
-#     data[trans_column] = data[trans_column].apply(lambda x: x*trans_operval)
-#     return data
-
-
-# def add(data, trans_column, trans_operval):
-
-#     data[trans_column] = data[trans_column].apply(lambda x: x+trans_operval)
-#     return data
