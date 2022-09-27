@@ -5,7 +5,7 @@ import pika
 import sys
 
 
-class FibonacciRpcClient(object):
+class TasksRpcClient(object):
 
     def __init__(self, task_name, context):
         self.connection = pika.BlockingConnection(
@@ -14,9 +14,10 @@ class FibonacciRpcClient(object):
         self.context = context
         self.channel = self.connection.channel()
         self.channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-        result = self.channel.queue_declare(queue='', exclusive=True)
+        result = self.channel.queue_declare(queue='', exclusive=False, durable=True)
         self.callback_queue = result.method.queue
         print("queue name-----", self.callback_queue)
+
         self.channel.basic_consume(
             queue=self.callback_queue,
             on_message_callback=self.on_response,
@@ -26,6 +27,7 @@ class FibonacciRpcClient(object):
         self.corr_id = None
 
     def on_response(self, ch, method, props, body):
+        print("correlation id while receiving...", props.correlation_id)
         if self.corr_id == props.correlation_id:
             self.response = body
 
@@ -34,9 +36,8 @@ class FibonacciRpcClient(object):
         self.corr_id = str(uuid.uuid4())
 
         message = {"context": self.context}
-
         self.channel.basic_publish(
-            exchange='logs_topic',
+            exchange='topic_logs',
             routing_key=self.routing_key,
             properties=pika.BasicProperties(
                 reply_to=self.callback_queue,
@@ -44,21 +45,14 @@ class FibonacciRpcClient(object):
             ),
             body=json.dumps(message))
         self.connection.process_data_events(time_limit=None)
-        return int(self.response)
+        return self.response
 
-fibonacci_rpc = FibonacciRpcClient("skip_column", {"col":"asdsadasd"})
+
+tasks_rpc = TasksRpcClient("change_format", {"task": "merge_col", "col": "asdsadasd"})
 
 print(" [x] Requesting fib(30)")
-response = fibonacci_rpc.call(30)
+response = tasks_rpc.call(30)
 print(" [.] Got %r" % response)
-
-
-
-
-
-
-
-
 
 #
 # def task_publisher(task_name, context):
