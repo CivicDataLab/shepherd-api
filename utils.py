@@ -68,8 +68,8 @@ def create_resource(res_dict):
     schema = json.dumps(schema)
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
         '"description":', 'description:')
-    description = "Executing " + resource_name + " on user provided data"
     res_name_for_file = res_dict['resource_name']
+    description = "Executing " + res_name_for_file + " on user provided data"
     if os.path.isfile(res_name_for_file + ".json"):
         file_path = res_name_for_file + ".json"
         file_format = "json"
@@ -111,6 +111,7 @@ def create_resource(res_dict):
                 }}
                 }}
                 """
+    print(query)
     variables = {"file": None}
     map = json.dumps({"0": ["variables.file"]})
     operations = json.dumps({

@@ -1,7 +1,8 @@
+from prefect import get_run_logger
 import json
+import uuid
 
 import pika
-from prefect import get_run_logger
 
 
 def get_task_names(task_obj_list):
@@ -33,23 +34,52 @@ def populate_task_schema(key_entry, format_entry, description_entry):
     return schema_dict
 
 
-def send_error_to_prefect_cloud(e:Exception):
+def send_error_to_prefect_cloud(e: Exception):
     prefect_logger = get_run_logger()
     prefect_logger.error(str(e))
 
 
-def task_publisher(task_name, context):
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost'))
-    channel = connection.channel()
+class TasksRpcClient(object):
 
-    channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+    def __init__(self, task_name, context, data):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
 
-    routing_key = task_name
-    message_body = {
-        'context': context
-        }
-    channel.basic_publish(
-        exchange='logs_topic', routing_key=routing_key, body=json.dumps(message_body))
-    print(" [x] Sent %r:%r" % (routing_key, message_body))
-    connection.close()
+        self.routing_key = task_name
+        self.context = context
+        self.data = data
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+        result = self.channel.queue_declare(queue='', exclusive=False, durable=True)
+        self.callback_queue = result.method.queue
+        print("queue name-----", self.callback_queue)
+
+        self.channel.basic_consume(
+            queue=self.callback_queue,
+            on_message_callback=self.on_response,
+            auto_ack=True)
+
+        self.response = None
+        self.corr_id = None
+
+    def on_response(self, ch, method, props, body):
+        print("correlation id while receiving...", props.correlation_id)
+        if self.corr_id == props.correlation_id:
+            self.response = body
+
+    def call(self):
+        self.response = None
+        self.corr_id = str(uuid.uuid4())
+
+        message = {"context": self.context,
+                   "data": self.data}
+        self.channel.basic_publish(
+            exchange='topic_logs',
+            routing_key=self.routing_key,
+            properties=pika.BasicProperties(
+                reply_to=self.callback_queue,
+                correlation_id=self.corr_id,
+            ),
+            body=json.dumps(message))
+        self.connection.process_data_events(time_limit=None)
+        return self.response

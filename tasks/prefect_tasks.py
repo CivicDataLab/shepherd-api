@@ -1,16 +1,35 @@
 import os
 import re
+import sys
 
 import pandas as pd
 import pdfkit
 from json2xml import json2xml
 from prefect import task, flow
 from task_utils import *
+from task_utils import TasksRpcClient
+from io import StringIO
 
 
 @task
 def skip_column(context, pipeline, task_obj):
-    task_publisher("skip_column", context)
+    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
+    data_bytes = task_publisher.call()  # this will be a csv string
+    data = data_bytes.decode("utf-8")
+    df = pd.read_csv(StringIO(data), sep=',')
+    pipeline.data = df
+    column = context['columns']
+    col = column
+    if not isinstance(column, list):
+        column = list()
+        column.append(col)
+    for col in column:
+        for sc in pipeline.schema:
+                    if sc['key'] == col:
+                        sc['key'] = ""
+                        sc['format'] = ""
+                        sc['description'] = ""
+    print("schema in pipeline....", pipeline.schema)
     # column = context['columns']
     # col = column
     # if not isinstance(column, list):
