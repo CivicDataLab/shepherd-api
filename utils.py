@@ -82,7 +82,7 @@ def create_resource(res_dict):
         file_path = res_name_for_file + ".xml"
         file_format = "xml"
         os.rename(file_path, resource_name + ".xml")
-        file_path = resource_name + ".json"
+        file_path = resource_name + ".xml"
         files = [
             ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
@@ -90,7 +90,7 @@ def create_resource(res_dict):
         file_path = res_name_for_file + ".pdf"
         file_format = "pdf"
         os.rename(file_path, resource_name + ".pdf")
-        file_path = resource_name + ".json"
+        file_path = resource_name + ".pdf"
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
@@ -152,7 +152,7 @@ def update_resource(res_dict):
         file_path = res_name_for_file + ".xml"
         file_format = "xml"
         os.rename(file_path, resource_name + ".xml")
-        file_path = resource_name + ".json"
+        file_path = resource_name + ".xml"
         files = [
             ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
@@ -160,7 +160,7 @@ def update_resource(res_dict):
         file_path = res_name_for_file + ".pdf"
         file_format = "pdf"
         os.rename(file_path, resource_name + ".pdf")
-        file_path = resource_name + ".json"
+        file_path = resource_name + ".pdf"
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
