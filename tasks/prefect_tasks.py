@@ -4,6 +4,7 @@ import re
 import pandas as pd
 import pdfkit
 from json2xml import json2xml
+from pandas.io.json import build_table_schema
 from prefect import task, flow
 from task_utils import *
 
@@ -97,12 +98,6 @@ def anonymize(context, pipeline, task_obj):
     to_replace = context['to_replace']
     replace_val = context['replace_val']
     col = context['column']
-
-    # key_entry = col
-    # format_entry = names_types_dict[col]
-    # description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    # pipeline.schema.append(populate_task_schema(key_entry, format_entry, description_entry))
-
     try:
         df_updated = pipeline.data[col].str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
         df_updated = df_updated.to_frame()
@@ -125,7 +120,6 @@ def change_format(context, pipeline, task_obj):
     # TODO - decide on the context contents
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
-    print("FORMAAAAAAT", file_format)
     if file_format == "xml" or file_format =="XML":
         data_string = pipeline.data.to_json(orient='records')
         json_data = json.loads(data_string)
@@ -146,24 +140,30 @@ def change_format(context, pipeline, task_obj):
 
 @task
 def aggregate(context, pipeline, task_obj):
+    print("inside aggregate")
     index = context['index']
     columns = context['columns']
     values = context['values']
     columns = columns.split(",")
     values = values.split(",")
-
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
     try:
         pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
-        for sc in pipeline.schema:
-            if sc['key'] == index:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-    except:
-        pass
+        inferred_schema = build_table_schema(pipeline.data)
+        fields = inferred_schema['fields']
+        new_schema = []
+        for field in fields:
+            key = field['name']
+            description = ""
+            format = field['type']
+            for sc in pipeline.schema:
+                if sc['key'] == key or sc['key'] == key[0]:
+                    description = sc['description']
+            if isinstance(key, tuple):
+                key = " ".join(map(str, key))
+            new_schema.append({"key": key, "format": format, "description": description})
+        pipeline.schema = new_schema
+    except Exception as e:
+        send_error_to_prefect_cloud(e)
     set_task_model_values(task_obj, pipeline)
 
 
@@ -188,12 +188,6 @@ def query_data_resource(context, pipeline, task_obj):
         num_rows_int = int(num_rows)
         final_df = column_selected_df.iloc[:num_rows_int]
     pipeline.data = final_df
-
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
-
-
     set_task_model_values(task_obj, pipeline)
 
 
