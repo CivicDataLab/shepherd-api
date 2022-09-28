@@ -43,10 +43,12 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
             for sc in new_pipeline.schema:
                 sc.pop('id', None)
 
+            fresh_schema = []
             for schema in new_pipeline.schema:
                 # if found a schema with no key, no need to use it while creating
-                if len(schema.get("key")) == 0:
-                    new_pipeline.schema.remove(schema)
+                if len(schema['key']) != 0:
+                    fresh_schema.append(schema)
+            new_pipeline.schema = fresh_schema
             id = create_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema}

@@ -1,10 +1,10 @@
-import pandas as pd
-import numpy as np
-from pandas.io.json import build_table_schema
+schema = [{'key': 'author', 'format': 'string', 'description': 'Sample'},
+          {'key': '', 'format': '', 'description': ''},
+          {'key': '', 'format': '','description': ''},
+          {'key': 'title with price', 'format': 'string', 'description': 'Result of merging columns title & price by pipeline - p500'}]
+temp_schema = []
+for sc in schema:
+    if len(sc['key']) != 0:
+        temp_schema.append(sc)
 
-df = pd.read_csv("books.csv")
-index = "title"
-columns = ["price", "author"]
-values = []
-k = df.pivot(index=index, columns=columns, values=values)
-print(k)
+print(temp_schema)
