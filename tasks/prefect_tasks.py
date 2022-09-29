@@ -1,10 +1,17 @@
+"""
+Each task is nothing but a publisher. These tasks go on publishing the pipeline tasks one by
+one in the given order and receive the data back from the workers.
+Python specific operations - like updating the pipeline data, schema etc. are the responsibilities of prefect tasks.
+Actual tasks can be found under tasks/scripts which can be implemented in any language of choice.
+"""
+
 import os
 import re
-import sys
 
 import pandas as pd
 import pdfkit
 from json2xml import json2xml
+from pandas.io.json import build_table_schema
 from prefect import task, flow
 from task_utils import *
 from task_utils import TasksRpcClient
@@ -14,79 +21,69 @@ from io import StringIO
 @task
 def skip_column(context, pipeline, task_obj):
     task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
-    data_bytes = task_publisher.call()  # this will be a csv string
-    data = data_bytes.decode("utf-8")
-    df = pd.read_csv(StringIO(data), sep=',')
-    pipeline.data = df
-    column = context['columns']
-    col = column
-    if not isinstance(column, list):
-        column = list()
-        column.append(col)
-    for col in column:
-        for sc in pipeline.schema:
-                    if sc['key'] == col:
-                        sc['key'] = ""
-                        sc['format'] = ""
-                        sc['description'] = ""
-    print("schema in pipeline....", pipeline.schema)
-    # column = context['columns']
-    # col = column
-    # if not isinstance(column, list):
-    #     column = list()
-    #     column.append(col)
-    # try:
-    #     pipeline.data = pipeline.data.drop(column, axis=1)
-    #     for col in column:
-    #         for sc in pipeline.schema:
-    #             if sc['key'] == col:
-    #                 sc['key'] = ""
-    #                 sc['format'] = ""
-    #                 sc['description'] = ""
-    # except Exception as e:
-    #     send_error_to_prefect_cloud(e)
+    try:
+        data_bytes = task_publisher.call()  # this will be a csv of bytes type
+    except Exception as e:
+        send_error_to_prefect_cloud(e)
+    data = str(data_bytes.decode("utf-8"))
+    print("data in prefect..", data)
+    if data.startswith("Worker failed with an error -"):
+        print("found err msg", data)
+        send_error_to_prefect_cloud(Exception(data))
+        task_obj.status = "Failed"
+        task_obj.save()
+    else:
+        df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data = df
+        column = context['columns']
+        col = column
+        if not isinstance(column, list):
+            column = list()
+            column.append(col)
+        for col in column:
+            for sc in pipeline.schema:
+                        if sc['key'] == col:
+                            sc['key'] = ""
+                            sc['format'] = ""
+                            sc['description'] = ""
 
-    set_task_model_values(task_obj, pipeline)
+        set_task_model_values(task_obj, pipeline)
+
 
 
 @task
 def merge_columns(context, pipeline, task_obj):
+    print("in prefect merge_cols..")
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
     separator = context['separator']
 
-    try:
-        print("inside try of merge_col")
-        pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
-            .astype(str)
-        pipeline.data = pipeline.data.drop([column1, column2], axis=1)
+    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
+    data_bytes = task_publisher.call()  # this will be a csv of bytes type
+    data = data_bytes.decode("utf-8")
+    df = pd.read_csv(StringIO(data), sep=',')
+    pipeline.data = df
+    print("data received in prefect...", df)
+    print(df.columns)
 
-        """ setting up the schema after task"""
-        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
-        names_types_dict = data_schema.dtypes.astype(str).to_dict()
-        new_col_format = names_types_dict[output_column]
-        for sc in pipeline.schema:
-            if sc['key'] == column1:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-                print(sc ," got resetted..$$$$$")
-            if sc['key'] == column2:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-                print(sc ," got resetted..$$$$$")
-        pipeline.schema.append({
-            "key": output_column, "format": new_col_format,
-            "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
-                           + pipeline.model.pipeline_name
-        })
-
-    except Exception as e:
-        send_error_to_prefect_cloud(e)
-
-
-    set_task_model_values(task_obj, pipeline)
+    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                               convert_integer=True, convert_boolean=True, convert_floating=True)
+    names_types_dict = data_schema.dtypes.astype(str).to_dict()
+    new_col_format = names_types_dict[output_column]
+    for sc in pipeline.schema:
+        if sc['key'] == column1:
+            sc['key'] = ""
+            sc['format'] = ""
+            sc['description'] = ""
+        if sc['key'] == column2:
+            sc['key'] = ""
+            sc['format'] = ""
+            sc['description'] = ""
+    pipeline.schema.append({
+        "key": output_column, "format": new_col_format,
+        "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
+                       + pipeline.model.pipeline_name
+    })
+    print(pipeline.schema)
 
 
 @task
@@ -191,7 +188,6 @@ def query_data_resource(context, pipeline, task_obj):
                                                convert_integer=True, convert_boolean=True, convert_floating=True)
     names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
-
     set_task_model_values(task_obj, pipeline)
 
 
@@ -209,8 +205,14 @@ def pipeline_executor(pipeline):
             globals()[func_names[i]](contexts[i], pipeline, tasks_objects[i])
     except Exception as e:
         raise e
-    pipeline.model.status = "Done"
+    for task in tasks_objects:
+        if task.status == "Failed":
+            pipeline.model.status = "Failed"
+            pipeline.model.save()
+            break
+    if pipeline.model.status != "Failed":
+        pipeline.model.status = "Done"
+        pipeline.model.save()
     pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
     print("Data after pipeline execution\n", pipeline.data)
-    pipeline.model.save()
     return
