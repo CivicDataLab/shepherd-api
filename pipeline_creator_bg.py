@@ -77,6 +77,7 @@ def create_pipeline(post_data, pipeline_name):
         p.status = "Created"
         p.dataset_id = dataset_id
         p.resource_id = res_id
+        p.save()
         # response = requests.get(data_url)
         # data_txt = response.text
         # data = pd.read_csv(StringIO(data_txt), sep=",")
