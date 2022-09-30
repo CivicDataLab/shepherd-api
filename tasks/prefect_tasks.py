@@ -149,25 +149,36 @@ def change_format(context, pipeline, task_obj):
 
 @task
 def aggregate(context, pipeline, task_obj):
-    index = context['index']
-    columns = context['columns']
-    values = context['values']
-    columns = columns.split(",")
-    values = values.split(",")
-
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
+    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
     try:
-        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
-        for sc in pipeline.schema:
-            if sc['key'] == index:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-    except:
-        pass
-    set_task_model_values(task_obj, pipeline)
+        data_bytes = task_publisher.call()  # this will be a csv of bytes type
+    except Exception as e:
+        send_error_to_prefect_cloud(e)
+    data = str(data_bytes.decode("utf-8"))
+    print("data in prefect..", data)
+    if data.startswith("Worker failed with an error -"):
+        send_error_to_prefect_cloud(Exception(data))
+        task_obj.status = "Failed"
+        task_obj.save()
+    else:
+        df = pd.read_csv(StringIO(data), sep=',')
+        df = remove_unnamed_col(df)
+        pipeline.data = df
+        inferred_schema = build_table_schema(pipeline.data)
+        fields = inferred_schema['fields']
+        new_schema = []
+        for field in fields:
+            key = field['name']
+            description = ""
+            format = field['type']
+            for sc in pipeline.schema:
+                if sc['key'] == key or sc['key'] == key[0]:
+                    description = sc['description']
+            if isinstance(key, tuple):
+                key = " ".join(map(str, key))
+            new_schema.append({"key": key, "format": format, "description": description})
+        pipeline.schema = new_schema
+        set_task_model_values(task_obj, pipeline)
 
 
 @task
