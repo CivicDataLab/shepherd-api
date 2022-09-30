@@ -19,11 +19,10 @@ def merge_columns(context, data):
     separator = context['separator']
     transformed_data = pd.read_json(data)
     try:
-        print("inside merge columns..")
         transformed_data[output_column] = transformed_data[column1].astype(str) + separator + transformed_data[column2].astype(str)
         transformed_data = transformed_data.drop([column1, column2], axis=1)
     except Exception as e:
-        print(e)
+        return "Worker failed with an error - " + str(e)
     return transformed_data
 
 
@@ -31,17 +30,19 @@ def on_request(ch, method, props, body):
     task_details = json.loads(body)
     context = task_details["context"]
     data = task_details["data"]
-    print("body",context)
-    print("hereeee")
-    print(type(context))
-    response = merge_columns(context, data)
-    response_msg = response.to_csv()
-    print("response in worker...", response)
-    ch.basic_publish(exchange="",
-                     routing_key=props.reply_to,
-                     properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
-                     body=str(response_msg))
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+    try:
+        response = merge_columns(context, data)
+        if isinstance(response, pd.core.frame.DataFrame):
+            response_msg = response.to_csv()
+        else:
+            response_msg = response
+        ch.basic_publish(exchange="",
+                         routing_key=props.reply_to,
+                         properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
+                         body=str(response_msg))
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception as e:
+        raise e
 
 
 channel.basic_qos(prefetch_count=2)

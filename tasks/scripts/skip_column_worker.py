@@ -39,7 +39,6 @@ def on_request(ch, method, props, body):
         response = skip_column(context, data)
         if isinstance(response, pd.core.frame.DataFrame):
             response_msg = response.to_csv()
-            print("it's a df..")
         else:
             response_msg = response
             print(response_msg)

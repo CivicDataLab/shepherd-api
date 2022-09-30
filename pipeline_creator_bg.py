@@ -74,6 +74,7 @@ def create_pipeline(post_data, pipeline_name):
         p.status = "Created"
         p.dataset_id = dataset_id
         p.resource_id = res_id
+        p.save()
         # response = requests.get(data_url)
         # data_txt = response.text
         # data = pd.read_csv(StringIO(data_txt), sep=",")
@@ -86,10 +87,7 @@ def create_pipeline(post_data, pipeline_name):
         task_order_no = each.get('order_no', None)
         task_context = each.get('context', None)
         p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
-    p.resource_id = res_id
-    p.dataset_id = dataset_id
-    p.status = "Created"
-    p.save()
+
     temp_file_name = uuid.uuid4().hex
     if not data.empty:
         data.to_pickle(temp_file_name)
