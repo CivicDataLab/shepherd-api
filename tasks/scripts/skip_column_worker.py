@@ -32,6 +32,7 @@ def skip_column(context, data):
 
 
 def on_request(ch, method, props, body):
+    print("[x] received task message...")
     task_details = json.loads(body)
     context = task_details["context"]
     data = task_details["data"]
@@ -47,6 +48,7 @@ def on_request(ch, method, props, body):
                          properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
                          body=str(response_msg))
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        print("[x] sent the response to the client..")
     except Exception as e:
         raise e
 

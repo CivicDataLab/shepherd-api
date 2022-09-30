@@ -34,6 +34,7 @@ def skip_column(context, pipeline, task_obj):
         task_obj.save()
     else:
         df = pd.read_csv(StringIO(data), sep=',')
+        df = remove_unnamed_col(df)
         pipeline.data = df
         column = context['columns']
         col = column
@@ -60,59 +61,66 @@ def merge_columns(context, pipeline, task_obj):
     task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
     data_bytes = task_publisher.call()  # this will be a csv of bytes type
     data = data_bytes.decode("utf-8")
-    df = pd.read_csv(StringIO(data), sep=',')
-    pipeline.data = df
-    print("data received in prefect...", df)
-    print(df.columns)
+    # If it's an error that was encountered by worker, then send it to prefect cloud and set task status to failed
+    if data.startswith("Worker failed with an error -"):
+        send_error_to_prefect_cloud(Exception(data))
+        task_obj.status = "Failed"
+        task_obj.save()
+    else:
+        df = pd.read_csv(StringIO(data), sep=',')
+        df = remove_unnamed_col(df)
+        pipeline.data = df
+        print("data received in prefect...", df)
+        print(df.columns)
 
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
-    new_col_format = names_types_dict[output_column]
-    for sc in pipeline.schema:
-        if sc['key'] == column1:
-            sc['key'] = ""
-            sc['format'] = ""
-            sc['description'] = ""
-        if sc['key'] == column2:
-            sc['key'] = ""
-            sc['format'] = ""
-            sc['description'] = ""
-    pipeline.schema.append({
-        "key": output_column, "format": new_col_format,
-        "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
-                       + pipeline.model.pipeline_name
-    })
-    print(pipeline.schema)
+        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
+        names_types_dict = data_schema.dtypes.astype(str).to_dict()
+        new_col_format = names_types_dict[output_column]
+        for sc in pipeline.schema:
+            if sc['key'] == column1:
+                sc['key'] = ""
+                sc['format'] = ""
+                sc['description'] = ""
+            if sc['key'] == column2:
+                sc['key'] = ""
+                sc['format'] = ""
+                sc['description'] = ""
+        pipeline.schema.append({
+            "key": output_column, "format": new_col_format,
+            "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
+                           + pipeline.model.pipeline_name
+        })
+        print(pipeline.schema)
+        set_task_model_values(task_obj, pipeline)
 
 
 @task
 def anonymize(context, pipeline, task_obj):
-    # TODO - decide on the context contents
-    to_replace = context['to_replace']
-    replace_val = context['replace_val']
-    col = context['column']
-
-    # key_entry = col
-    # format_entry = names_types_dict[col]
-    # description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    # pipeline.schema.append(populate_task_schema(key_entry, format_entry, description_entry))
-
+    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
     try:
-        df_updated = pipeline.data[col].str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
-        df_updated = df_updated.to_frame()
-        pipeline.data[col] = df_updated[col]
+        data_bytes = task_publisher.call()  # this will be a csv of bytes type
     except Exception as e:
         send_error_to_prefect_cloud(e)
+    data = str(data_bytes.decode("utf-8"))
+    print("data in prefect..", data)
+    if data.startswith("Worker failed with an error -"):
+        send_error_to_prefect_cloud(Exception(data))
+        task_obj.status = "Failed"
+        task_obj.save()
+    else:
+        df = pd.read_csv(StringIO(data), sep=',')
+        df = remove_unnamed_col(df)
+        pipeline.data = df
+        col = context['column']
+        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
+        names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
-
-    for sc in pipeline.schema:
-        if sc['key'] == col:
-            sc['format'] = names_types_dict[col]
-    set_task_model_values(task_obj, pipeline)
+        for sc in pipeline.schema:
+            if sc['key'] == col:
+                sc['format'] = names_types_dict[col]
+        set_task_model_values(task_obj, pipeline)
 
 
 @task
