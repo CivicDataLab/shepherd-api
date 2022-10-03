@@ -3,7 +3,8 @@ This is a django based application to create and run the data-pipelines. The app
 
 
 ## Requirements
-
+- Once the code is cloned from the git, install the requirements from `requirements.txt` file by running `pip install -r requirements.txt`
+- The project uses rabbitmq, which can be installed from the [official website](https://www.rabbitmq.com/download.html)
 
 ## Background tasks 
 This application needs several background tasks to be running. 
