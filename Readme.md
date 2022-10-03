@@ -25,7 +25,7 @@ A demo request to the shepherd API consists the following in the request body.
 }
 ```
 1. _pipeline_name_ - Name of the pipeline that needs to be created.
-2. _res_id_ - Resource ID aka the ID of the resource that needs transformation. This can be considered input data for our pipeline. 
+2. _res_id_ - Resource ID i.e. ID of the resource that needs transformation. This can be considered input data for our pipeline. 
 3. _db_action_ - Takes either **create** or **update**. This tells us whether to **create** a new resource in our db out of transformed data or to **update** the existing resource with the transformed data.
 4. _transformers_list_ - List of json objects.
    1. _name_ - Name of the task that needs to be performed.
