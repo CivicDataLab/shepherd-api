@@ -152,6 +152,7 @@ def read_data(data_url):
 
 
 def res_transform(request):
+    """ Triggers pipeline_creator_bg background task. """
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)

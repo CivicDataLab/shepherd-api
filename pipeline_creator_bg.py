@@ -13,9 +13,8 @@ from datatransform.models import Pipeline
 
 @background(queue="create_pipeline")
 def create_pipeline(post_data, pipeline_name):
+    """ Asynchronous task to create pipeline using the request received from the API """
     p = Pipeline(status="Requested", pipeline_name=pipeline_name)
-    # p = Pipeline(status="Requested", pipeline_name=pipeline_name, dataset_id=dataset_id, resource_id=res_id)
-    # p.output_id = upload_dataset(pipeline_name, org_name)
     p.save()
 
     p_id = p.pk
