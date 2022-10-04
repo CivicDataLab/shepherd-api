@@ -16,21 +16,6 @@ def skip_column(context, pipeline, task_obj):
     if not isinstance(column, list):
         column = list()
         column.append(col)
-
-    # data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-    #                                            convert_integer=True, convert_boolean=True, convert_floating=True)
-    #
-    # names_types_dict = data_schema.dtypes.astype(str).to_dict()
-    # key_entry = ""
-    # format_entry = ""
-    # for col in column:
-    #     key_entry = key_entry + col + ","
-    #     format_entry = format_entry + names_types_dict[col] + ","
-    # key_entry = key_entry.rstrip()
-    # format_entry = format_entry.rstrip()
-    # description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    # schema = populate_task_schema(key_entry, format_entry, description_entry)
-    # pipeline.schema.append(schema)
     try:
         pipeline.data = pipeline.data.drop(column, axis=1)
         for col in column:
@@ -39,10 +24,11 @@ def skip_column(context, pipeline, task_obj):
                     sc['key'] = ""
                     sc['format'] = ""
                     sc['description'] = ""
+        set_task_model_values(task_obj, pipeline)
     except Exception as e:
         send_error_to_prefect_cloud(e)
-
-    set_task_model_values(task_obj, pipeline)
+        task_obj.status = "Failed"
+        task_obj.save()
 
 
 @task
@@ -50,15 +36,7 @@ def merge_columns(context, pipeline, task_obj):
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
     separator = context['separator']
 
-    # key_entry_list = str(column1) + ", " + str(column2)
-    # format_1 = names_types_dict[column1]
-    # format_2 = names_types_dict[column2]
-    # format_entry = str(format_1) + ", " + str(format_2)
-    # description_entry = "performed " + task_obj.task_name + " by " + pipeline.model.pipeline_name
-    # pipeline.schema.append(populate_task_schema(key_entry_list, format_entry, description_entry))
-
     try:
-        print("inside try of merge_col")
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
             .astype(str)
         pipeline.data = pipeline.data.drop([column1, column2], axis=1)
@@ -84,12 +62,11 @@ def merge_columns(context, pipeline, task_obj):
             "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
                            + pipeline.model.pipeline_name
         })
-
+        set_task_model_values(task_obj, pipeline)
     except Exception as e:
         send_error_to_prefect_cloud(e)
-
-
-    set_task_model_values(task_obj, pipeline)
+        task_obj.status = "Failed"
+        task_obj.save()
 
 
 @task
@@ -102,17 +79,18 @@ def anonymize(context, pipeline, task_obj):
         df_updated = pipeline.data[col].str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
         df_updated = df_updated.to_frame()
         pipeline.data[col] = df_updated[col]
+        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
+        names_types_dict = data_schema.dtypes.astype(str).to_dict()
+
+        for sc in pipeline.schema:
+            if sc['key'] == col:
+                sc['format'] = names_types_dict[col]
+        set_task_model_values(task_obj, pipeline)
     except Exception as e:
         send_error_to_prefect_cloud(e)
-
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
-
-    for sc in pipeline.schema:
-        if sc['key'] == col:
-            sc['format'] = names_types_dict[col]
-    set_task_model_values(task_obj, pipeline)
+        task_obj.status = "Failed"
+        task_obj.save()
 
 
 @task
@@ -121,21 +99,38 @@ def change_format(context, pipeline, task_obj):
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
     if file_format == "xml" or file_format =="XML":
-        data_string = pipeline.data.to_json(orient='records')
-        json_data = json.loads(data_string)
-        xml_data = json2xml.Json2xml(json_data).to_xml()
-        print(xml_data)
-        with open(result_file_name + '.xml', 'w') as f:
-            f.write(xml_data)
+        try:
+            data_string = pipeline.data.to_json(orient='records')
+            json_data = json.loads(data_string)
+            xml_data = json2xml.Json2xml(json_data).to_xml()
+            print(xml_data)
+            with open(result_file_name + '.xml', 'w') as f:
+                f.write(xml_data)
+            set_task_model_values(task_obj, pipeline)
+        except Exception as e:
+            send_error_to_prefect_cloud(e)
+            task_obj.status = "Failed"
+            task_obj.save()
     elif file_format == "pdf" or file_format == "PDF":
-        pipeline.data.to_html("data.html")
-        pdfkit.from_file("data.html", result_file_name + ".pdf")
-        os.remove('data.html')
+        try:
+            pipeline.data.to_html("data.html")
+            pdfkit.from_file("data.html", result_file_name + ".pdf")
+            os.remove('data.html')
+            set_task_model_values(task_obj, pipeline)
+        except Exception as e:
+            send_error_to_prefect_cloud(e)
+            task_obj.status = "Failed"
+            task_obj.save()
     elif file_format == "json" or file_format == "JSON":
-        data_string = pipeline.data.to_json(orient='records')
-        with open(result_file_name + ".json", "w") as f:
-            f.write(data_string)
-    set_task_model_values(task_obj, pipeline)
+        try:
+            data_string = pipeline.data.to_json(orient='records')
+            with open(result_file_name + ".json", "w") as f:
+                f.write(data_string)
+            set_task_model_values(task_obj, pipeline)
+        except Exception as e:
+            send_error_to_prefect_cloud(e)
+            task_obj.status = "Failed"
+            task_obj.save()
 
 
 @task
@@ -162,9 +157,11 @@ def aggregate(context, pipeline, task_obj):
                 key = " ".join(map(str, key))
             new_schema.append({"key": key, "format": format, "description": description})
         pipeline.schema = new_schema
+        set_task_model_values(task_obj, pipeline)
     except Exception as e:
         send_error_to_prefect_cloud(e)
-    set_task_model_values(task_obj, pipeline)
+        task_obj.status = "Failed"
+        task_obj.save()
 
 
 @task
@@ -205,7 +202,16 @@ def pipeline_executor(pipeline):
             globals()[func_names[i]](contexts[i], pipeline, tasks_objects[i])
     except Exception as e:
         raise e
-    pipeline.model.status = "Done"
+    # if any of the tasks is failed, set pipeline status as - Failed
+    for each_task in tasks_objects:
+        if each_task.status == "Failed":
+            pipeline.model.status = "Failed"
+            pipeline.model.save()
+            break
+    # if none of the tasks failed, set pipeline status as - Done
+    if pipeline.model.status != "Failed":
+        pipeline.model.status = "Done"
+        pipeline.model.save()
     pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
     print("Data after pipeline execution\n", pipeline.data)
     pipeline.model.save()

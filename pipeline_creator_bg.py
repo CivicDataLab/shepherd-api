@@ -26,43 +26,89 @@ def create_pipeline(post_data, pipeline_name):
     db_action = post_data.get('db_action', None)
     data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
     # data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
-    query = f"""{{
-                       resource(resource_id: {res_id}) {{
-                       id
-                       title
-                       description
-                       issued
-                       modified
-                       remote_url
-                       format
-                       schema{{
-                       id
-                       key
-                       format
-                       description
-                       }}
-                       file
-                       status
-                       dataset {{
-                         id
-                         title
-                         description
-                         issued
-                         remote_issued
-                         remote_modified
-                         period_from
-                         period_to
-                         update_frequency
-                         modified
-                         status
-                         remark
-                         funnel
-                         action
-                         access_type
-                         License
-                       }}
-                     }}
-                   }}
+    query = f"""
+{{
+  resource(resource_id: {res_id}) {{
+    id
+    title
+    description
+    issued
+    modified
+    status
+    masked_fields
+    dataset {{
+      id
+      title
+      description
+      issued
+      remote_issued
+      remote_modified
+      period_from
+      period_to
+      update_frequency
+      modified
+      status
+      remark
+      funnel
+      action
+      access_type
+      License
+      dataset_type
+    }}
+    apidetails {{
+      auth_required
+      url_path
+      response_type
+    }}
+    filedetails {{
+      format
+      file
+      remote_url
+    }}
+    datarequest_set {{
+      id
+      status
+      description
+      remark
+      purpose
+      file
+      creation_date
+      reject_reason
+      user
+    }}
+    dataaccessmodel_set {{
+      id
+      title
+      type
+      description
+      issued
+      modified
+      contract_url
+      contract
+      license
+      quota_limit
+      quota_limit_unit
+      rate_limit
+      rate_limit_unit
+    }}
+    schema {{
+      id
+      key
+      format
+      description
+    }}
+    file_details {{
+      format
+      file
+      remote_url
+    }}
+    api_details {{
+      auth_required
+      url_path
+      response_type
+    }}
+  }}
+}}
                    """
     headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)

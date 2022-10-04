@@ -13,7 +13,7 @@ def api_resource_query_task(p_id, api_source_id, request_id):
     pipeline_object = Pipeline.objects.get(pk=p_id)
     pipeline_object.status = "In Progress"
     query = f"""{{
-  api_resource(api_resource_id: {api_source_id}) {{
+  resource(resource_id: {api_source_id}) {{
     id
     title
     description
@@ -38,48 +38,59 @@ def api_resource_query_task(p_id, api_source_id, request_id):
       action
       access_type
       License
-      }}
-    url_path
-    api_source {{
-      id
-      title
-      base_url
-      description
-      api_version
-      headers
-      auth_loc
-      auth_type
-      auth_credentials
-      auth_token
-      apiresource_set
-      {{
-        id
-        title
-        description
-      }}
+      dataset_type
     }}
-    auth_required
-    response_type
+    resourceschema_set {{
+      id
+      key
+      format
+      description
+    }}
+    datarequest_set {{
+      id
+      status
+      description
+      remark
+      purpose
+      file
+      creation_date
+      reject_reason
+      user
+    }}
+	    api_details {{
+        api_source {{
+          base_url
+          auth_loc
+          auth_type
+          auth_credentials
+          auth_token
+          headers
+        }}
+      auth_required
+      url_path
+      response_type
     }}
   }}
+}}
 """
     headers = {}
     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
     response = json.loads(request.text)
-    base_url = response['data']['api_resource']['api_source']['base_url']
-    url_path = response['data']['api_resource']['url_path']
+    print("***\n",response)
+    base_url = response['data']['resource']['api_details']['api_source']['base_url']
+    url_path = response['data']['resource']['api_details']['url_path']
     # # headers = response['data']['api_source']['headers']
-    auth_loc = response['data']['api_resource']['api_source']['auth_loc'] #- header/param?
-    auth_type = response['data']['api_resource']['api_source']['auth_type']  #if token/uname-pwd
+    auth_loc = response['data']['resource']['api_details']['api_source']['auth_loc'] #- header/param?
+    auth_type = response['data']['resource']['api_details']['api_source']['auth_type']  #if token/uname-pwd
     param = {}
     header = {}
     if auth_loc == "HEADER":
         if auth_type == "TOKEN":
-            auth_token = response['data']['api_source']['auth_token']
+            auth_token = response['data']['resource']['api_details']['api_source']['auth_token']
             header = {"access_token":auth_token}
         elif auth_type == "CREDENTIAL":
             # [{key:username,value:dc, description:desc},{key:password,value:pass, description:desc}]
-            auth_credentials = response['data']['api_source']['auth_credentials']  # - uname pwd
+            auth_credentials = response['data']['resource']['api_details']['api_source']['auth_credentials']  # - uname pwd
             uname_key = auth_credentials[0]['key']
             uname = auth_credentials[0]["value"]
             pwd_key = auth_credentials[1]['key']
@@ -87,16 +98,16 @@ def api_resource_query_task(p_id, api_source_id, request_id):
             header = {uname_key: uname, pwd_key: pwd}
     if auth_loc == "PARAM":
         if auth_type == "TOKEN":
-            auth_token = response['data']['api_source']['auth_token']
+            auth_token = response['data']['resource']['api_details']['api_source']['auth_token']
             param = {"access_token":auth_token}
         elif auth_type == "CREDENTIAL":
-            auth_credentials = response['data']['api_source']['auth_credentials'] #- uname pwd
+            auth_credentials = response['data']['resource']['api_details']['api_source']['auth_credentials'] #- uname pwd
             uname_key = auth_credentials[0]['key']
             uname = auth_credentials[0]["value"]
             pwd_key = auth_credentials[1]['key']
             pwd = auth_credentials[1]["value"]
             param = {uname_key: uname, pwd_key:pwd}
-    response_type = response['data']['api_resource']['response_type']
+    response_type = response['data']['resource']['api_details']['response_type']
 
     api_request = requests.get(base_url + "/" + url_path, headers=header, params=param)
     api_response = api_request.text
