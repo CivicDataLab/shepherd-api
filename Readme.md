@@ -88,3 +88,8 @@ Content-Type: application/json
         ]
 }
 ```
+## Flow of the code
+As there are many background tasks involved, it might be a bit confusing at first. 
+Here is how control flows once request is made.
+
+[API end-point](datatransform/views.py)...>[Pipeline creation](pipeline_creator_bg.py)...>[Rabbitmq worker](worker_demon.py)...>[Model to pipeline](pipeline/model_to_pipeline.py)...>[Prefect tasks](tasks/prefect_tasks.py)...>[Model to pipeline](pipeline/model_to_pipeline.py)...>[Utils](utils.py)
