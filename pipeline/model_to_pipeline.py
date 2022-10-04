@@ -35,6 +35,11 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         [execution_from_model(task) for task in tasks]
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         if db_action == "update":
+            # fresh_schema = []
+            # for schema in new_pipeline.schema:
+            #     if len(schema['key']) != 0:
+            #         fresh_schema.append(schema)
+            # new_pipeline.schema = fresh_schema
             update_resource(
             {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
              'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})

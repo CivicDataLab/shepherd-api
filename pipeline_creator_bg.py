@@ -55,42 +55,6 @@ def create_pipeline(post_data, pipeline_name):
       License
       dataset_type
     }}
-    apidetails {{
-      auth_required
-      url_path
-      response_type
-    }}
-    filedetails {{
-      format
-      file
-      remote_url
-    }}
-    datarequest_set {{
-      id
-      status
-      description
-      remark
-      purpose
-      file
-      creation_date
-      reject_reason
-      user
-    }}
-    dataaccessmodel_set {{
-      id
-      title
-      type
-      description
-      issued
-      modified
-      contract_url
-      contract
-      license
-      quota_limit
-      quota_limit_unit
-      rate_limit
-      rate_limit_unit
-    }}
     schema {{
       id
       key
@@ -102,14 +66,9 @@ def create_pipeline(post_data, pipeline_name):
       file
       remote_url
     }}
-    api_details {{
-      auth_required
-      url_path
-      response_type
-    }}
   }}
 }}
-                   """
+"""
     headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
     response = json.loads(request.text)

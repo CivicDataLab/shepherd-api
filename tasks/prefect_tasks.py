@@ -29,6 +29,7 @@ def skip_column(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
+        raise e
 
 
 @task
@@ -51,12 +52,10 @@ def merge_columns(context, pipeline, task_obj):
                 sc['key'] = ""
                 sc['format'] = ""
                 sc['description'] = ""
-                print(sc ," got resetted..$$$$$")
             if sc['key'] == column2:
                 sc['key'] = ""
                 sc['format'] = ""
                 sc['description'] = ""
-                print(sc ," got resetted..$$$$$")
         pipeline.schema.append({
             "key": output_column, "format": new_col_format,
             "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
@@ -67,6 +66,7 @@ def merge_columns(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
+        raise e
 
 
 @task
@@ -76,7 +76,7 @@ def anonymize(context, pipeline, task_obj):
     replace_val = context['replace_val']
     col = context['column']
     try:
-        df_updated = pipeline.data[col].str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
+        df_updated = pipeline.data[col].astype(str).str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
         df_updated = df_updated.to_frame()
         pipeline.data[col] = df_updated[col]
         data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
@@ -91,6 +91,7 @@ def anonymize(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
+        raise e
 
 
 @task

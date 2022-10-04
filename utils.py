@@ -69,10 +69,10 @@ def create_resource(res_dict):
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
         '"description":', 'description:')
     res_name_for_file = res_dict['resource_name']
-    description = "Executing " + res_name_for_file + " on user provided data"
+    description = "Result of the execution of pipeline named - " + res_name_for_file
     if os.path.isfile(res_name_for_file + ".json"):
         file_path = res_name_for_file + ".json"
-        file_format = "json"
+        file_format = "JSON"
         os.rename(file_path, resource_name + ".json")
         file_path = resource_name + ".json"
         files = [
@@ -80,7 +80,7 @@ def create_resource(res_dict):
         ]
     elif os.path.isfile(res_name_for_file + ".xml"):
         file_path = res_name_for_file + ".xml"
-        file_format = "xml"
+        file_format = "XML"
         os.rename(file_path, resource_name + ".xml")
         file_path = resource_name + ".xml"
         files = [
@@ -88,7 +88,7 @@ def create_resource(res_dict):
         ]
     elif os.path.isfile(res_name_for_file + ".pdf"):
         file_path = res_name_for_file + ".pdf"
-        file_format = "pdf"
+        file_format = "PDF"
         os.rename(file_path, resource_name + ".pdf")
         file_path = resource_name + ".pdf"
         files = [
@@ -101,16 +101,20 @@ def create_resource(res_dict):
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
-    query = f"""mutation mutation_create_resource($file: Upload!) {{create_resource(
-                resource_data: {{file: $file, title:"{resource_name}", description:"{description}",    
-                dataset: "5", remote_url: "",  format: "{file_format}", status : "",
-                schema: {schema}
+    # data_set = {res_details['data']['resource']['dataset']['id']}
+    query = f"""mutation 
+    mutation_create_resource($file: Upload!) 
+    {{create_resource(
+                resource_data: {{ title:"{resource_name}", description:"{description}",    
+                dataset: "8", status : "",
+                schema: {schema}, file_details:{{format: "{file_format}", file: $file,  remote_url: ""}}
                 }})
                 {{
                 resource {{ id }}
                 }}
                 }}
                 """
+    print(query)
     variables = {"file": None}
     map = json.dumps({"0": ["variables.file"]})
     operations = json.dumps({
@@ -142,7 +146,7 @@ def update_resource(res_dict):
     res_name_for_file = res_dict['resource_name']
     if os.path.isfile(res_name_for_file + ".json"):
         file_path = res_name_for_file + ".json"
-        file_format = "json"
+        file_format = "JSON"
         os.rename(file_path, resource_name + ".json")
         file_path = resource_name + ".json"
         files = [
@@ -179,12 +183,11 @@ def update_resource(res_dict):
                 mutation($file: Upload!) {{update_resource(resource_data: {{
                 id:{res_details['data']['resource']['id']}, 
                 title:"{res_details['data']['resource']['title']}", 
-                description:"{res_details['data']['resource']['description']}", 
-                file:   $file,  
+                description:"{res_details['data']['resource']['description']}",   
                 dataset:"{res_details['data']['resource']['dataset']['id']}",
-                status:"{res_details['data']['resource']['status']}", 
-                format:"{file_format}", 
-                remote_url:"{res_details['data']['resource']['remote_url']}", 
+                status:"{res_details['data']['resource']['status']}",  
+                file_details:{{ format:"{file_format}", file:$file, 
+                remote_url:"{res_details['data']['resource']['file_details']['remote_url']}" }},
                 schema:{schema},
                 }})
                 {{

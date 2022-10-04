@@ -118,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+MAX_ATTEMPTS = 1
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
