@@ -49,12 +49,8 @@ def api_resource_query_task(p_id, api_source_id, request_id):
     datarequest_set {{
       id
       status
-      description
-      remark
-      purpose
       file
       creation_date
-      reject_reason
       user
     }}
 	    api_details {{
@@ -139,9 +135,6 @@ def api_resource_query_task(p_id, api_source_id, request_id):
     data_request {{
       id
       status
-      description
-      remark
-      purpose
       file
     }}
   }}
