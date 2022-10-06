@@ -155,4 +155,5 @@ def api_resource_query_task(p_id, api_source_id, request_id):
         files[0][1][1].close()
         os.remove(file_path)
         pipeline_object.status = "Done"
+        pipeline_object.save()
 
