@@ -12,6 +12,7 @@ def api_resource_query_task(p_id, api_source_id, request_id):
     print(api_source_id)
     pipeline_object = Pipeline.objects.get(pk=p_id)
     pipeline_object.status = "In Progress"
+    pipeline_object.save()
     query = f"""{{
   resource(resource_id: {api_source_id}) {{
     id
