@@ -34,6 +34,8 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         new_pipeline.schema = res_details['data']['resource']['schema']
         [execution_from_model(task) for task in tasks]
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
+        if new_pipeline.model.status == "Failed":
+            raise Exception("There was an error while running the pipeline")
         if db_action == "update":
             # fresh_schema = []
             # for schema in new_pipeline.schema:
