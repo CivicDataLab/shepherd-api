@@ -29,7 +29,6 @@ def skip_column(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
-        raise e
 
 
 @task
@@ -66,7 +65,6 @@ def merge_columns(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
-        raise e
 
 
 @task
@@ -91,7 +89,6 @@ def anonymize(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
-        raise e
 
 
 @task
