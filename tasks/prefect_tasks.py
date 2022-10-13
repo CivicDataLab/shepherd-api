@@ -93,16 +93,16 @@ def anonymize(context, pipeline, task_obj):
 
 @task
 def change_format(context, pipeline, task_obj):
-    # TODO - decide on the context contents
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
+    dir = "format_changed_files/"
     if file_format == "xml" or file_format =="XML":
         try:
             data_string = pipeline.data.to_json(orient='records')
             json_data = json.loads(data_string)
             xml_data = json2xml.Json2xml(json_data).to_xml()
             print(xml_data)
-            with open(result_file_name + '.xml', 'w') as f:
+            with open(dir+result_file_name + '.xml', 'w') as f:
                 f.write(xml_data)
             set_task_model_values(task_obj, pipeline)
         except Exception as e:
@@ -112,7 +112,7 @@ def change_format(context, pipeline, task_obj):
     elif file_format == "pdf" or file_format == "PDF":
         try:
             pipeline.data.to_html("data.html")
-            pdfkit.from_file("data.html", result_file_name + ".pdf")
+            pdfkit.from_file("data.html", dir+result_file_name + ".pdf")
             os.remove('data.html')
             set_task_model_values(task_obj, pipeline)
         except Exception as e:
@@ -122,14 +122,13 @@ def change_format(context, pipeline, task_obj):
     elif file_format == "json" or file_format == "JSON":
         try:
             data_string = pipeline.data.to_json(orient='records')
-            with open(result_file_name + ".json", "w") as f:
+            with open(dir + result_file_name + ".json", "w") as f:
                 f.write(data_string)
             set_task_model_values(task_obj, pipeline)
         except Exception as e:
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
-
 
 @task
 def aggregate(context, pipeline, task_obj):

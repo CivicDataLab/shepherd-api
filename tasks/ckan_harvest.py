@@ -7,12 +7,41 @@ import requests
 import json
 
 
-# class CkanTOIDP(Task):
-#     def __init__(self, model, source_url, dataset_count):
-#         super().__init__(model)
-#         # self.dest_organization = dest_organization
-#         self.src_dataset_count = int(dataset_count)
-#         self.src_ckan = source_url
+def create_resource(resource, dataset_id):
+    # payload = {
+    #     "query": "mutation createResourceMutation { create_resource(   resource_data: "
+    #              "{ title: \"" + resource["name"] + "\","
+    #              " description: \" " + resource["description"] + " \","
+    #              " remote_url: \" " +
+    #              resource["url"] + " \","
+    #              " format: \" " + resource["format"] + " \","
+    #              " dataset: \" " + dataset_id + "\" } ) "
+    #              "{   resource {"
+    #              "     id  "
+    #              "   } } }",
+    #     "variables": {}}
+    query = f"""mutation 
+        mutation_create_resource
+        {{create_resource(
+                    resource_data: {{ title:"{resource["name"]}", description:"{resource["description"]}",    
+                    dataset: "{dataset_id}", status : "{resource["state"]}",
+                    schema: []
+                    file_details:{{format: "{resource["format"]}",  
+                    remote_url: "{resource["url"]}"
+                    }}
+                    }})
+                    {{
+                    resource {{ id }}
+                    }}
+                    }}
+                    """
+    print(query)
+    response = requests.post("https://idpbe.civicdatalab.in/graphql", json={'query': query})
+    print(response.text)
+    print("Resource created..........")
+    return response
+
+
 source_url = src_ckan = "https://dataspace.niua.org"
 src_dataset_count = 460
 src_ckan = ckanapi.RemoteCKAN(src_ckan, apikey='')
@@ -120,9 +149,6 @@ geo_mapping = {
 }
 catalog_id = "1"
 package_list = src_ckan.action.current_package_list_with_resources(limit=100, page=1)
-#print(package_list)
-# print(package_list[0]['organization']['name'])
-# inputs - url, dataset count, catalog name
 # TODO tags - take out all tags from packagelist[tags][name].
 # TODO sectors - take out tags and filter out the alphanumeric. then apply if else based on tag name.
 # TODO geo - keep old logic for now.
@@ -131,12 +157,14 @@ package_list = src_ckan.action.current_package_list_with_resources(limit=100, pa
 # TODO catalog in graphql - replace with catalog_name taken as i/p.
 # TODO
 
+
 def get_tags_list(tags:list):
     tag_names = []
     for dict in tags:
         tag_names.append(dict["name"])
     tag_names = json.dumps(tag_names)
     return tag_names
+
 
 def get_sector(tags:str):
     sector = "Other"
@@ -152,7 +180,6 @@ def get_sector(tags:str):
     elif 'finance' in tags_list:
         sector = "Finance"
     return json.dumps([sector])
-
 
 
 for page in range(1, 2):
@@ -174,7 +201,6 @@ for page in range(1, 2):
         issued = package['metadata_created']
         modified = package['metadata_modified']
 
-# Inputs -
         query = f"""mutation
         {{
             create_dataset(dataset_data:{{
@@ -196,54 +222,15 @@ for page in range(1, 2):
             }}
         }}
 """
-
-
-
-        # payload = {
-        #             "query": "mutation createDatasetMutation { create_dataset(   dataset_data: "
-        #                      "{ title: \"" + package["name"] + "\","
-        #                     " description: \" " + package["title"] + " \","
-        #                     " sector: \" " + sector + " \","
-        #                     " geography: \" " + "" + " \","
-        #                     " license: \" " + pkg_license + " \","
-        #                     " catalog: \" " + catalog_id + "\" } ) "
-        #                     "{   dataset {"
-        #                     "     id  "
-        #                     "   } } }",
-        #             "variables": {}}
-
-        variables = {}
-        operations = json.dumps({
-            "query": query,
-            "variables": variables
-        })
         print(query)
         response = requests.post("https://idpbe.civicdatalab.in/graphql", json={'query': query})
         print(response.text)
-        # dataset_id = json.loads(response.text)['data']['create_dataset']['dataset']['id']
-        #
-        # resources = package['resources']
+        dataset_id = json.loads(response.text)['data']['create_dataset']['dataset']['id']
 
-    #     for resource in resources:
-    #         create_resource(resource, dataset_id)
-    #
-    # @staticmethod
-    # def create_resource(resource, dataset_id):
-    #     payload = {
-    #         "query": "mutation createResourceMutation { create_resource(   resource_data: "
-    #                  "{ title: \"" + resource["name"] + "\","
-    #                  " description: \" " + resource["description"] + " \","
-    #                  " remote_url: \" " +
-    #                  resource["url"] + " \","
-    #                  " format: \" " + resource["format"] + " \","
-    #                  " dataset: \" " + dataset_id + "\" } ) "
-    #                  "{   resource {"
-    #                  "     id  "
-    #                  "   } } }",
-    #         "variables": {}}
-    #
-    #     response = requests.request("POST", "http://127.0.0.1:8005/graphql", json=payload)
-    #     print(response)
-    #     return response
+        resources = package['resources']
+
+        for resource in resources:
+            create_resource(resource, dataset_id)
+
 
 # CkanTOIDP(src_ckan="https://dataspace.niua.org", src_dataset_count=460, dest_organization="")._execute()

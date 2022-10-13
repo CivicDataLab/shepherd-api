@@ -9,6 +9,7 @@ from utils import update_resource, create_resource
 
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
+
 def task_executor(pipeline_id, data_pickle, res_details, db_action):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
@@ -37,14 +38,14 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         if new_pipeline.model.status == "Failed":
             raise Exception("There was an error while running the pipeline")
         if db_action == "update":
-            # fresh_schema = []
-            # for schema in new_pipeline.schema:
-            #     if len(schema['key']) != 0:
-            #         fresh_schema.append(schema)
-            # new_pipeline.schema = fresh_schema
+            fresh_schema = []
+            for schema in new_pipeline.schema:
+                if len(schema['key']) != 0:
+                    fresh_schema.append(schema)
+            new_pipeline.schema = fresh_schema
             update_resource(
-            {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-             'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})
+                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})
         if db_action == "create":
             print("scs after popping...\n")
             for sc in new_pipeline.schema:
@@ -60,7 +61,7 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema}
             )
-            print("res_id created at...",id)
+            print("res_id created at...", id)
         return
 
     except Exception as e:

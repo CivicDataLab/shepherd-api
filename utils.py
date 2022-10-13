@@ -61,6 +61,10 @@ def upload_resource(res_dict):
 
 
 def create_resource(res_dict):
+    """ The file used to create resource can be of any format. If the pipeline has change_format
+    task, the created resource can be in json/xml/pdf formats. To choose the file and to set the
+    file format field in the graphql query there are some if else statements involved here.
+    """
     res_details = res_dict['res_details']
     resource_name = res_details['data']['resource']['title']
     data = res_dict['data']
@@ -70,24 +74,26 @@ def create_resource(res_dict):
         '"description":', 'description:')
     res_name_for_file = res_dict['resource_name']
     description = "Result of the execution of pipeline named - " + res_name_for_file
-    if os.path.isfile(res_name_for_file + ".json"):
-        file_path = res_name_for_file + ".json"
+    dir = "format_changed_files/"
+    file_path = dir + res_name_for_file
+    if os.path.isfile(file_path + ".json"):
+        file_path = file_path + ".json"
         file_format = "JSON"
         os.rename(file_path, resource_name + ".json")
         file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".json", open(resource_name + ".json", 'rb'), 'json'))
         ]
-    elif os.path.isfile(res_name_for_file + ".xml"):
-        file_path = res_name_for_file + ".xml"
+    elif os.path.isfile(file_path + ".xml"):
+        file_path = file_path + ".xml"
         file_format = "XML"
         os.rename(file_path, resource_name + ".xml")
         file_path = resource_name + ".xml"
         files = [
             ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
-    elif os.path.isfile(res_name_for_file + ".pdf"):
-        file_path = res_name_for_file + ".pdf"
+    elif os.path.isfile(file_path + ".pdf"):
+        file_path = file_path + ".pdf"
         file_format = "PDF"
         os.rename(file_path, resource_name + ".pdf")
         file_path = resource_name + ".pdf"
@@ -136,6 +142,7 @@ def create_resource(res_dict):
 
 
 def update_resource(res_dict):
+    """ Description of create_resource applies to this method as-well"""
     res_details = res_dict['res_details']
     resource_name = res_details['data']['resource']['title']
     data = res_dict['data']
@@ -144,25 +151,27 @@ def update_resource(res_dict):
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
         '"description":', 'description:')
     res_name_for_file = res_dict['resource_name']
-    if os.path.isfile(res_name_for_file + ".json"):
-        file_path = res_name_for_file + ".json"
+    dir = "format_changed_files/"
+    file_path = dir + res_name_for_file
+    if os.path.isfile(file_path + ".json"):
+        file_path = file_path + ".json"
         file_format = "JSON"
         os.rename(file_path, resource_name + ".json")
         file_path = resource_name + ".json"
         files = [
             ('0', (resource_name + ".json", open(resource_name + ".json", 'rb'), 'json'))
         ]
-    elif os.path.isfile(res_name_for_file + ".xml"):
-        file_path = res_name_for_file + ".xml"
-        file_format = "xml"
+    elif os.path.isfile(file_path + ".xml"):
+        file_path = file_path + ".xml"
+        file_format = "XML"
         os.rename(file_path, resource_name + ".xml")
         file_path = resource_name + ".xml"
         files = [
             ('0', (resource_name + ".xml", open(resource_name + ".xml", 'rb'), 'xml'))
         ]
-    elif os.path.isfile(res_name_for_file + ".pdf"):
-        file_path = res_name_for_file + ".pdf"
-        file_format = "pdf"
+    elif os.path.isfile(file_path + ".pdf"):
+        file_path = file_path + ".pdf"
+        file_format = "PDF"
         os.rename(file_path, resource_name + ".pdf")
         file_path = resource_name + ".pdf"
         files = [

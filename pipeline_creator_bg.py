@@ -51,8 +51,6 @@ def create_pipeline(post_data, pipeline_name):
       remark
       funnel
       action
-      access_type
-      License
       dataset_type
     }}
     schema {{
