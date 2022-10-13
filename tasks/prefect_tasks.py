@@ -101,7 +101,6 @@ def change_format(context, pipeline, task_obj):
             data_string = pipeline.data.to_json(orient='records')
             json_data = json.loads(data_string)
             xml_data = json2xml.Json2xml(json_data).to_xml()
-            print(xml_data)
             with open(dir+result_file_name + '.xml', 'w') as f:
                 f.write(xml_data)
             set_task_model_values(task_obj, pipeline)
