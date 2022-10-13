@@ -1,6 +1,4 @@
 import re
-
-from pipeline.task import Task
 import ckanapi
 import math
 import requests
@@ -8,18 +6,6 @@ import json
 
 
 def create_resource(resource, dataset_id):
-    # payload = {
-    #     "query": "mutation createResourceMutation { create_resource(   resource_data: "
-    #              "{ title: \"" + resource["name"] + "\","
-    #              " description: \" " + resource["description"] + " \","
-    #              " remote_url: \" " +
-    #              resource["url"] + " \","
-    #              " format: \" " + resource["format"] + " \","
-    #              " dataset: \" " + dataset_id + "\" } ) "
-    #              "{   resource {"
-    #              "     id  "
-    #              "   } } }",
-    #     "variables": {}}
     query = f"""mutation 
         mutation_create_resource
         {{create_resource(
@@ -42,7 +28,30 @@ def create_resource(resource, dataset_id):
     return response
 
 
-source_url = src_ckan = "https://dataspace.niua.org"
+def get_tags_list(tags:list):
+    tag_names = []
+    for dict in tags:
+        tag_names.append(dict["name"])
+    tag_names = json.dumps(tag_names)
+    return tag_names
+
+
+def get_sector(tags:str):
+    sector = "Other"
+    tags_list = json.loads(tags)
+    tags_list = list(map(str.lower, tags_list))
+    for tag in tags_list:
+        if re.search(r'\d', tag):
+            tags_list.remove(tag)
+    if "transit" in tags_list or "transport" in tags_list:
+        sector = "Transport"
+    elif 'environment' in tags_list:
+        sector = "Environment and Forest"
+    elif 'finance' in tags_list:
+        sector = "Finance"
+    return json.dumps([sector])
+
+src_ckan = "https://dataspace.niua.org"
 src_dataset_count = 460
 src_ckan = ckanapi.RemoteCKAN(src_ckan, apikey='')
 pages = math.ceil(src_dataset_count / 100)
@@ -149,38 +158,6 @@ geo_mapping = {
 }
 catalog_id = "1"
 package_list = src_ckan.action.current_package_list_with_resources(limit=100, page=1)
-# TODO tags - take out all tags from packagelist[tags][name].
-# TODO sectors - take out tags and filter out the alphanumeric. then apply if else based on tag name.
-# TODO geo - keep old logic for now.
-# TODO access_type - set Open if is_access from ckan is True else Restricted.
-# TODO remote_issued and remote_modified are metadata_created and metadata_modified respectively
-# TODO catalog in graphql - replace with catalog_name taken as i/p.
-# TODO
-
-
-def get_tags_list(tags:list):
-    tag_names = []
-    for dict in tags:
-        tag_names.append(dict["name"])
-    tag_names = json.dumps(tag_names)
-    return tag_names
-
-
-def get_sector(tags:str):
-    sector = "Other"
-    tags_list = json.loads(tags)
-    tags_list = list(map(str.lower, tags_list))
-    for tag in tags_list:
-        if re.search(r'\d', tag):
-            tags_list.remove(tag)
-    if "transit" in tags_list or "transport" in tags_list:
-        sector = "Transport"
-    elif 'environment' in tags_list:
-        sector = "Environment and Forest"
-    elif 'finance' in tags_list:
-        sector = "Finance"
-    return json.dumps([sector])
-
 
 for page in range(1, 2):
     package_list = src_ckan.action.current_package_list_with_resources(limit=100, page=page)
@@ -222,15 +199,10 @@ for page in range(1, 2):
             }}
         }}
 """
-        print(query)
         response = requests.post("https://idpbe.civicdatalab.in/graphql", json={'query': query})
-        print(response.text)
         dataset_id = json.loads(response.text)['data']['create_dataset']['dataset']['id']
 
         resources = package['resources']
 
         for resource in resources:
             create_resource(resource, dataset_id)
-
-
-# CkanTOIDP(src_ckan="https://dataspace.niua.org", src_dataset_count=460, dest_organization="")._execute()
