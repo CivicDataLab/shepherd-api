@@ -1,4 +1,5 @@
 import json
+import logging
 import queue
 import uuid
 
@@ -68,24 +69,33 @@ def create_pipeline(post_data, pipeline_name):
 }}
 """
     headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-    request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
-    response = json.loads(request.text)
-    print(response)
-    dataset_id = response['data']['resource']['dataset']['id']
-    transformers_list = [i for i in transformers_list if i]
+    try:
+        request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+        response = json.loads(request.text)
+        print(response)
+        dataset_id = response['data']['resource']['dataset']['id']
+    except Exception as e:
+        print("******", str(e))
+        logging.warning(e)
+        # following variables are used by the publisher. Hence, initialized.
+        dataset_id = "NULL"
+        response = "NULL"
     try:
         data = read_data(data_url)
-        p = Pipeline.objects.get(pk=p_id)
-        p.status = "Created"
-        p.dataset_id = dataset_id
-        p.resource_id = res_id
-        p.save()
-        # response = requests.get(data_url)
-        # data_txt = response.text
-        # data = pd.read_csv(StringIO(data_txt), sep=",")
-        # print(data)
     except Exception as e:
-        data = None
+        print("******"+str(e))
+        data = pd.DataFrame(columns=['No data read'])
+
+    temp_file_name = uuid.uuid4().hex
+    data.to_pickle(temp_file_name)
+
+    transformers_list = [i for i in transformers_list if i]
+    p = Pipeline.objects.get(pk=p_id)
+    p.status = "Created"
+    p.dataset_id = dataset_id
+    p.resource_id = res_id
+    p.save()
+
 
     for _, each in enumerate(transformers_list):
         task_name = each.get('name', None)
@@ -93,9 +103,6 @@ def create_pipeline(post_data, pipeline_name):
         task_context = each.get('context', None)
         p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
 
-    temp_file_name = uuid.uuid4().hex
-    if not data.empty:
-        data.to_pickle(temp_file_name)
     message_body = {
         'p_id': p_id,
         'temp_file_name': temp_file_name,

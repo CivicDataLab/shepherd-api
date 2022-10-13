@@ -32,7 +32,10 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         def execution_from_model(task):
             new_pipeline.add(task)
 
-        new_pipeline.schema = res_details['data']['resource']['schema']
+        try:
+            new_pipeline.schema = res_details['data']['resource']['schema']
+        except:
+            pass
         [execution_from_model(task) for task in tasks]
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         if new_pipeline.model.status == "Failed":
