@@ -209,6 +209,17 @@ def query_data_resource(context, pipeline, task_obj):
 
     set_task_model_values(task_obj, pipeline)
 
+@task
+def obi_mh_scraper(context, pipeline, task_obj):
+    print(task_obj.task_name)
+    task_publisher = TasksRpcClient(task_obj.task_name, context, None)
+    try:
+        data_bytes = task_publisher.call()  # this will be a csv of bytes type
+    except Exception as e:
+        send_error_to_prefect_cloud(e)
+    data = str(data_bytes.decode("utf-8"))
+    print("data returned from worker..", data)
+
 
 @flow
 def pipeline_executor(pipeline):

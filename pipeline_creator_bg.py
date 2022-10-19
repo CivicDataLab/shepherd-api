@@ -1,4 +1,5 @@
 import json
+import logging
 import queue
 import uuid
 
@@ -13,6 +14,7 @@ from datatransform.models import Pipeline
 
 @background(queue="create_pipeline")
 def create_pipeline(post_data, pipeline_name):
+    """ Asynchronous task to create pipeline using the request received from the API """
     p = Pipeline(status="Requested", pipeline_name=pipeline_name)
     p.save()
 
@@ -24,63 +26,76 @@ def create_pipeline(post_data, pipeline_name):
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
     data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
-    query = f"""{{
-                       resource(resource_id: {res_id}) {{
-                       id
-                       title
-                       description
-                       issued
-                       modified
-                       remote_url
-                       format
-                       schema{{
-                       id
-                       key
-                       format
-                       description
-                       }}
-                       file
-                       status
-                       dataset {{
-                         id
-                         title
-                         description
-                         issued
-                         remote_issued
-                         remote_modified
-                         period_from
-                         period_to
-                         update_frequency
-                         modified
-                         status
-                         remark
-                         funnel
-                         action
-                         access_type
-                         License
-                       }}
-                     }}
-                   }}
-                   """
+    # data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
+    query = f"""
+{{
+  resource(resource_id: {res_id}) {{
+    id
+    title
+    description
+    issued
+    modified
+    status
+    masked_fields
+    dataset {{
+      id
+      title
+      description
+      issued
+      remote_issued
+      remote_modified
+      period_from
+      period_to
+      update_frequency
+      modified
+      status
+      remark
+      funnel
+      action
+      dataset_type
+    }}
+    schema {{
+      id
+      key
+      format
+      description
+    }}
+    file_details {{
+      format
+      file
+      remote_url
+    }}
+  }}
+}}
+"""
     headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-    request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
-    response = json.loads(request.text)
-    print(response)
-    dataset_id = response['data']['resource']['dataset']['id']
-    transformers_list = [i for i in transformers_list if i]
+    try:
+        request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+        response = json.loads(request.text)
+        print(response)
+        dataset_id = response['data']['resource']['dataset']['id']
+    except Exception as e:
+        print("******", str(e))
+        logging.warning(e)
+        # following variables are used by the publisher. Hence, initialized.
+        dataset_id = "NULL"
+        response = "NULL"
     try:
         data = read_data(data_url)
-        p = Pipeline.objects.get(pk=p_id)
-        p.status = "Created"
-        p.dataset_id = dataset_id
-        p.resource_id = res_id
-        p.save()
-        # response = requests.get(data_url)
-        # data_txt = response.text
-        # data = pd.read_csv(StringIO(data_txt), sep=",")
-        # print(data)
     except Exception as e:
-        data = None
+        print("******"+str(e))
+        data = pd.DataFrame(columns=['No data read'])
+
+    temp_file_name = uuid.uuid4().hex
+    data.to_pickle(temp_file_name)
+
+    transformers_list = [i for i in transformers_list if i]
+    p = Pipeline.objects.get(pk=p_id)
+    p.status = "Created"
+    p.dataset_id = dataset_id
+    p.resource_id = res_id
+    p.save()
+
 
     for _, each in enumerate(transformers_list):
         task_name = each.get('name', None)
@@ -88,9 +103,6 @@ def create_pipeline(post_data, pipeline_name):
         task_context = each.get('context', None)
         p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
 
-    temp_file_name = uuid.uuid4().hex
-    if not data.empty:
-        data.to_pickle(temp_file_name)
     message_body = {
         'p_id': p_id,
         'temp_file_name': temp_file_name,
