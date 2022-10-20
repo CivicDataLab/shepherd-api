@@ -9,6 +9,7 @@ from background_task import background
 from django.http import JsonResponse
 
 from datatransform.models import Pipeline
+import graphql_service
 
 
 @background(queue="create_pipeline")
@@ -26,50 +27,50 @@ def create_pipeline(post_data, pipeline_name):
     db_action = post_data.get('db_action', None)
     data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
     # data_url = "https://justicehub.in/dataset/a1d29ace-784b-4479-af09-11aea7be1bf5/resource/0e5974a1-d66d-40f8-85a4-750adc470f26/download/metadata.csv"
-    query = f"""
-{{
-  resource(resource_id: {res_id}) {{
-    id
-    title
-    description
-    issued
-    modified
-    status
-    masked_fields
-    dataset {{
-      id
-      title
-      description
-      issued
-      remote_issued
-      remote_modified
-      period_from
-      period_to
-      update_frequency
-      modified
-      status
-      remark
-      funnel
-      action
-      dataset_type
-    }}
-    schema {{
-      id
-      key
-      format
-      description
-    }}
-    file_details {{
-      format
-      file
-      remote_url
-    }}
-  }}
-}}
-"""
-    headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-    request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
-    response = json.loads(request.text)
+#     query = f"""
+# {{
+#   resource(resource_id: {res_id}) {{
+#     id
+#     title
+#     description
+#     issued
+#     modified
+#     status
+#     masked_fields
+#     dataset {{
+#       id
+#       title
+#       description
+#       issued
+#       remote_issued
+#       remote_modified
+#       period_from
+#       period_to
+#       update_frequency
+#       modified
+#       status
+#       remark
+#       funnel
+#       action
+#       dataset_type
+#     }}
+#     schema {{
+#       id
+#       key
+#       format
+#       description
+#     }}
+#     file_details {{
+#       format
+#       file
+#       remote_url
+#     }}
+#   }}
+# }}
+# """
+#     headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
+#     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+    response = graphql_service.resource_query(res_id)
     print(response)
     dataset_id = response['data']['resource']['dataset']['id']
     transformers_list = [i for i in transformers_list if i]
