@@ -27,14 +27,12 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
 
-        # for i in tasks:
-        #     print(i.task_name)
         def execution_from_model(task):
             new_pipeline.add(task)
 
         new_pipeline.schema = res_details['data']['resource']['schema']
         [execution_from_model(task) for task in tasks]
-        prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
+        prefect_tasks.pipeline_executor(new_pipeline)
         if new_pipeline.model.status == "Failed":
             raise Exception("There was an error while running the pipeline")
         if db_action == "update":
@@ -47,7 +45,6 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})
         if db_action == "create":
-            print("scs after popping...\n")
             for sc in new_pipeline.schema:
                 sc.pop('id', None)
 

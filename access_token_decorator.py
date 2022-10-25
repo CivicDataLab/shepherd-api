@@ -1,7 +1,13 @@
 import requests
 import json
+from configparser import ConfigParser
+import os
 
-auth_url = "https://auth.idp.civicdatalab.in/users/get_sys_token"
+config = ConfigParser()
+
+config.read("config.ini")
+
+auth_url =  os.environ.get('AUTH_URL', config.get("datapipeline", "AUTH_URL"))
 
 
 def get_sys_token(func):

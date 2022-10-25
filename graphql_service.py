@@ -1,7 +1,16 @@
 import json
+import os
 
 import requests
 from access_token_decorator import get_sys_token
+from configparser import ConfigParser
+import os
+
+config = ConfigParser()
+
+config.read("config.ini")
+
+graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_QL_URL"))
 
 
 @get_sys_token
@@ -28,7 +37,6 @@ def resource_query(res_id, access_token=None):
           update_frequency
           modified
           status
-          remark
           funnel
           action
           dataset_type
@@ -48,7 +56,7 @@ def resource_query(res_id, access_token=None):
     }}
     """
     headers = {"Authorization": "Bearer" + access_token}  # {"Authorization": "Bearer YOUR API KEY"}
-    request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+    request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
     return json.loads(request.text)
 
 
@@ -76,8 +84,8 @@ def create_resource(resource_name, description, schema, file_format, files, acce
         "operationName": "mutation_create_resource",
     })
     try:
-        response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations,
-                                                                                "map": map}, files=files, headers=headers)
+        response = requests.post(graph_ql_url, data={"operations": operations,
+                                                     "map": map}, files=files, headers=headers)
         response_json = json.loads(response.text)
         return response_json
     except:
@@ -114,7 +122,7 @@ def update_resource(res_details, file_format, schema, files, access_token=None):
         "variables": variables
     })
     try:
-        response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
+        response = requests.post(graph_ql_url, data={"operations": operations, "map": map},
                                  files=files, headers=headers)
         print(response)
         response_json = json.loads(response.text)

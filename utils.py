@@ -108,30 +108,7 @@ def create_resource(res_dict):
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
-    # data_set = {res_details['data']['resource']['dataset']['id']}
-    # query = f"""mutation
-    # mutation_create_resource($file: Upload!)
-    # {{create_resource(
-    #             resource_data: {{ title:"{resource_name}", description:"{description}",
-    #             dataset: "8", status : "",
-    #             schema: {schema}, file_details:{{format: "{file_format}", file: $file,  remote_url: ""}}
-    #             }})
-    #             {{
-    #             resource {{ id }}
-    #             }}
-    #             }}
-    #             """
-    # print(query)
-    # variables = {"file": None}
-    # map = json.dumps({"0": ["variables.file"]})
-    # operations = json.dumps({
-    #     "query": query,
-    #     "variables": variables,
-    #     "operationName": "mutation_create_resource"
-    # })
     try:
-        # response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations,
-        #                                                                         "map": map}, files=files)
         response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files)
         print(response_json)
         return response_json['data']['create_resource']['resource']['id']
@@ -185,38 +162,7 @@ def update_resource(res_dict):
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
-
-    # variables = {"file": None}
-    #
-    # map = json.dumps({"0": ["variables.file"]})
-    # query = f"""
-    #             mutation($file: Upload!) {{update_resource(resource_data: {{
-    #             id:{res_details['data']['resource']['id']},
-    #             title:"{res_details['data']['resource']['title']}",
-    #             description:"{res_details['data']['resource']['description']}",
-    #             dataset:"{res_details['data']['resource']['dataset']['id']}",
-    #             status:"{res_details['data']['resource']['status']}",
-    #             file_details:{{ format:"{file_format}", file:$file,
-    #             remote_url:"{res_details['data']['resource']['file_details']['remote_url']}" }},
-    #             schema:{schema},
-    #             }})
-    #             {{
-    #             success
-    #             errors
-    #             resource {{ id }}
-    #         }}
-    #         }}"""
-    #
-    # print(query)
-    # operations = json.dumps({
-    #     "query": query,
-    #     "variables": variables
-    # })
-    # headers = {}
     try:
-        #     response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
-        #                              files=files, headers=headers)
-        #     print(response)
         response_json = graphql_service.update_resource(res_details, file_format, schema, files)
         print("updateresource.", response_json)
     except Exception as e:

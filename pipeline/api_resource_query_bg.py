@@ -6,7 +6,14 @@ from background_task import background
 
 from datatransform.models import Pipeline
 from access_token_decorator import get_sys_token
+from configparser import ConfigParser
+import os
 
+config = ConfigParser()
+
+config.read("config.ini")
+
+graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_QL_URL"))
 
 @background(queue="api_res_operation")
 @get_sys_token
@@ -36,7 +43,6 @@ def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
       update_frequency
       modified
       status
-      remark
       funnel
       action
       dataset_type
@@ -71,9 +77,9 @@ def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
 }}
 """
     headers = {"Authorization": "Bearer" + access_token}
-    request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+    request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
     response = json.loads(request.text)
-    print("((((((",response)
+    print(response)
     base_url = response['data']['resource']['api_details']['api_source']['base_url']
     url_path = response['data']['resource']['api_details']['url_path']
     # # headers = response['data']['api_source']['headers']
@@ -105,7 +111,6 @@ def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
             pwd = auth_credentials[1]["value"]
             param = {uname_key: uname, pwd_key:pwd}
     response_type = response['data']['resource']['api_details']['response_type']
-    print("before api request...", base_url + "/" + url_path)
     try:
         api_request = requests.get(base_url + url_path, headers=header, params=param, verify=True)
     except:
@@ -150,7 +155,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
     })
     # headers = {}
     try:
-        response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
+        response = requests.post(graph_ql_url, data={"operations": operations, "map": map},
                                  files=files, headers=headers)
         print(response.text)
     except Exception as e:
