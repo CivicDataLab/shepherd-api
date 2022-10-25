@@ -1,9 +1,11 @@
 import json
 
 import requests
+from access_token_decorator import get_sys_token
 
 
-def resource_query(res_id):
+@get_sys_token
+def resource_query(res_id, access_token=None):
     query = f"""
     {{
       resource(resource_id: {res_id}) {{
@@ -45,12 +47,13 @@ def resource_query(res_id):
       }}
     }}
     """
-    headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
+    headers = {"Authorization": "Bearer" + access_token}  # {"Authorization": "Bearer YOUR API KEY"}
     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
-    return request.text
+    return json.loads(request.text)
 
 
-def create_resource(resource_name, description, schema, file_format, files):
+@get_sys_token
+def create_resource(resource_name, description, schema, file_format, files, access_token=None):
     query = f"""mutation 
         mutation_create_resource($file: Upload!) 
         {{create_resource(
@@ -66,21 +69,23 @@ def create_resource(resource_name, description, schema, file_format, files):
     print(query)
     variables = {"file": None}
     map = json.dumps({"0": ["variables.file"]})
+    headers = {"Authorization": access_token}
     operations = json.dumps({
         "query": query,
         "variables": variables,
-        "operationName": "mutation_create_resource"
+        "operationName": "mutation_create_resource",
     })
     try:
         response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations,
-                                                                                "map": map}, files=files)
+                                                                                "map": map}, files=files, headers=headers)
         response_json = json.loads(response.text)
         return response_json
     except:
         return None
 
 
-def update_resource(res_details, file_format, schema, files):
+@get_sys_token
+def update_resource(res_details, file_format, schema, files, access_token=None):
     variables = {"file": None}
 
     map = json.dumps({"0": ["variables.file"]})
@@ -103,11 +108,11 @@ def update_resource(res_details, file_format, schema, files):
                 }}"""
 
     print(query)
+    headers = {"Authorization": access_token}
     operations = json.dumps({
         "query": query,
         "variables": variables
     })
-    headers = {}
     try:
         response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
                                  files=files, headers=headers)

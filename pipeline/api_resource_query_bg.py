@@ -5,10 +5,12 @@ import requests
 from background_task import background
 
 from datatransform.models import Pipeline
+from access_token_decorator import get_sys_token
 
 
 @background(queue="api_res_operation")
-def api_resource_query_task(p_id, api_source_id, request_id):
+@get_sys_token
+def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
     print(api_source_id)
     pipeline_object = Pipeline.objects.get(pk=p_id)
     pipeline_object.status = "In Progress"
@@ -37,8 +39,6 @@ def api_resource_query_task(p_id, api_source_id, request_id):
       remark
       funnel
       action
-      access_type
-      License
       dataset_type
     }}
     resourceschema_set {{
@@ -70,10 +70,10 @@ def api_resource_query_task(p_id, api_source_id, request_id):
   }}
 }}
 """
-    headers = {}
+    headers = {"Authorization": "Bearer" + access_token}
     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
     response = json.loads(request.text)
-    print("***\n",response)
+    print("((((((",response)
     base_url = response['data']['resource']['api_details']['api_source']['base_url']
     url_path = response['data']['resource']['api_details']['url_path']
     # # headers = response['data']['api_source']['headers']
@@ -105,8 +105,11 @@ def api_resource_query_task(p_id, api_source_id, request_id):
             pwd = auth_credentials[1]["value"]
             param = {uname_key: uname, pwd_key:pwd}
     response_type = response['data']['resource']['api_details']['response_type']
-
-    api_request = requests.get(base_url + "/" + url_path, headers=header, params=param)
+    print("before api request...", base_url + "/" + url_path)
+    try:
+        api_request = requests.get(base_url + url_path, headers=header, params=param, verify=True)
+    except:
+        api_request = requests.get(base_url + url_path, headers=header, params=param, verify=False)
     api_response = api_request.text
     if response_type == "JSON":
         print("in if...")
@@ -145,7 +148,7 @@ def api_resource_query_task(p_id, api_source_id, request_id):
         "query": file_upload_query,
         "variables": variables
     })
-    headers = {}
+    # headers = {}
     try:
         response = requests.post('https://idpbe.civicdatalab.in/graphql', data={"operations": operations, "map": map},
                                  files=files, headers=headers)
