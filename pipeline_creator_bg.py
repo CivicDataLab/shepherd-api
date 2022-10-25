@@ -10,6 +10,15 @@ from django.http import JsonResponse
 
 from datatransform.models import Pipeline
 import graphql_service
+from configparser import ConfigParser
+import os
+
+config = ConfigParser()
+
+config.read("config.ini")
+
+data_download_url = os.environ.get('DATA_DOWNLOAD_URL', config.get("datapipeline", "DATA_DOWNLOAD_URL"))
+rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RABBIT_MQ_HOST"))
 
 
 @background(queue="create_pipeline")
@@ -22,15 +31,11 @@ def create_pipeline(post_data, pipeline_name):
 
     print("inside bg task - pipeline create")
     transformers_list = post_data.get('transformers_list', None)
-    # org_name = post_data.get('org_name', None)
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
-    data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
-#     headers = {}  # {"Authorization": "Bearer YOUR API KEY"}
-#     request = requests.post('https://idpbe.civicdatalab.in/graphql', json={'query': query}, headers=headers)
+    data_url = data_download_url + str(res_id)
     response = graphql_service.resource_query(res_id)
     print(response)
-    print("*****",response['data']['resource']['dataset'])
     dataset_id = response['data']['resource']['dataset']['id']
     transformers_list = [i for i in transformers_list if i]
     try:
@@ -40,10 +45,6 @@ def create_pipeline(post_data, pipeline_name):
         p.dataset_id = dataset_id
         p.resource_id = res_id
         p.save()
-        # response = requests.get(data_url)
-        # data_txt = response.text
-        # data = pd.read_csv(StringIO(data_txt), sep=",")
-        # print(data)
     except Exception as e:
         data = None
 
@@ -63,7 +64,7 @@ def create_pipeline(post_data, pipeline_name):
         'db_action': db_action
     }
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost'))
+        pika.ConnectionParameters(host=rabbit_mq_host))
     channel = connection.channel()
 
     channel.queue_declare(queue='pipeline_ui_queue')

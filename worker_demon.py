@@ -2,22 +2,23 @@ import json
 import os
 import sys
 
-import django
 import pika
-#from pipeline.model_to_pipeline import *
+from configparser import ConfigParser
+import os
+
+config = ConfigParser()
+
+config.read("config.ini")
+rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RABBIT_MQ_HOST"))
 print ('inside ----')
 try:
     from pipeline.model_to_pipeline import * 
     pass
 except Exception as e:
     print ('exception ----',e)
-    
-
-# pipeline_object = Pipeline.objects.get(pk=196)
-# print(pipeline_object.pipeline_name)
 
 def main():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_mq_host))
     channel = connection.channel()
 
     channel.queue_declare(queue='pipeline_ui_queue')
@@ -34,8 +35,6 @@ def main():
             task_executor(p_id, temp_file_name, res_details, db_action)
         except Exception as e:
             print (e)
-        # print("got temp_file name as ", body_json['temp_file_name'])
-        # os.remove('./'+temp_file_name)
         print(" [x] Done")
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
