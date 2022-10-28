@@ -16,7 +16,7 @@ def set_log_file(pipeline_id, pipeline_name):
 
 
 def get_logger_for_existing_file(pipeline_id):
-    log_file = glob.glob(f'logs\{pipeline_id}*.log')[0]
+    log_file = glob.glob(f'logs/{pipeline_id}*.log')[0]
     logger = logging.getLogger("IDP-Datapipeline")
     hdlr = logging.StreamHandler()
     fhdlr = logging.FileHandler(log_file)
