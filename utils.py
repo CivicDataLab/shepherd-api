@@ -75,6 +75,7 @@ def create_resource(res_dict):
         '"description":', 'description:')
     res_name_for_file = res_dict['resource_name']
     description = "Result of the execution of pipeline named - " + res_name_for_file
+    logger = res_dict['logger']
     dir = "format_changed_files/"
     file_path = dir + res_name_for_file
     if os.path.isfile(file_path + ".json"):
@@ -111,8 +112,10 @@ def create_resource(res_dict):
     try:
         response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files)
         print(response_json)
+        logger.info(f"INFO: Created resource at - {response_json['data']['create_resource']['resource']['id']}")
         return response_json['data']['create_resource']['resource']['id']
     except Exception as e:
+        logger.error(f"ERROR: couldn't create resource. Graphql raised an error - {str(e)}")
         print(e)
     finally:
         files[0][1][1].close()
@@ -128,6 +131,7 @@ def update_resource(res_dict):
     schema = json.dumps(schema)
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
         '"description":', 'description:')
+    logger = res_dict['logger']
     res_name_for_file = res_dict['resource_name']
     dir = "format_changed_files/"
     file_path = dir + res_name_for_file
@@ -164,8 +168,10 @@ def update_resource(res_dict):
         ]
     try:
         response_json = graphql_service.update_resource(res_details, file_format, schema, files)
+        logger.info(f"INFO: Updated the resource. Response is - {response_json}")
         print("updateresource.", response_json)
     except Exception as e:
+        logger.error(f"ERROR: couldn't create resource. Graphql raised an error - {str(e)}")
         print(e)
     finally:
         files[0][1][1].close()

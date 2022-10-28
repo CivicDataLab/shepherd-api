@@ -1,6 +1,8 @@
 import json
 import os
+from io import StringIO
 
+import pandas as pd
 import requests
 from background_task import background
 
@@ -17,7 +19,7 @@ graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_
 
 @background(queue="api_res_operation")
 @get_sys_token
-def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
+def api_resource_query_task(p_id, api_source_id, request_id, request_columns="", request_rows="", access_token=None):
     print(api_source_id)
     pipeline_object = Pipeline.objects.get(pk=p_id)
     pipeline_object.status = "In Progress"
@@ -122,8 +124,20 @@ def api_resource_query_task(p_id, api_source_id, request_id, access_token=None):
             f.write(api_response)
         file_path = str(p_id) + "-data.json"
     if response_type == "CSV":
+        csv_data = StringIO(api_response)
+        data = pd.read_csv(csv_data, sep=";")
+        if request_columns == "":
+            column_selected_df = data
+        else:
+            column_selected_df = data.loc[:, data.columns.isin(request_columns.split(","))]
+        # if row length is not specified return all rows
+        if request_rows == "" or int(request_rows) > len(column_selected_df):
+            final_df = column_selected_df
+        else:
+            num_rows_int = int(request_rows)
+            final_df = column_selected_df.iloc[:num_rows_int]
         with open(str(p_id) + "-data.csv", 'w') as f:
-            f.write(api_response)
+            f.write(final_df)
         file_path = str(p_id) + "-data.csv"
     status = "FETCHED"
     files = [

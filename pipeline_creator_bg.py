@@ -8,6 +8,7 @@ import requests
 from background_task import background
 from django.http import JsonResponse
 
+import log_utils
 from datatransform.models import Pipeline
 import graphql_service
 from configparser import ConfigParser
@@ -29,19 +30,25 @@ def create_pipeline(post_data, pipeline_name):
 
     p_id = p.pk
 
-    print("inside bg task - pipeline create")
+    logger = log_utils.set_log_file(p_id, pipeline_name)
     transformers_list = post_data.get('transformers_list', None)
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
+    logger.info(f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
+                f"{transformers_list}")
     data_url = data_download_url + str(res_id)
-    response = graphql_service.resource_query(res_id)
-    print(response)
-    dataset_id = response['data']['resource']['dataset']['id']
+    try:
+        response = graphql_service.resource_query(res_id)
+        dataset_id = response['data']['resource']['dataset']['id']
+        print(response)
+    except Exception as e:
+        logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
     transformers_list = [i for i in transformers_list if i]
     try:
         data = read_data(data_url)
         p = Pipeline.objects.get(pk=p_id)
         p.status = "Created"
+        logger.info(f"INFO: Pipeline created")
         p.dataset_id = dataset_id
         p.resource_id = res_id
         p.save()
@@ -71,6 +78,7 @@ def create_pipeline(post_data, pipeline_name):
     channel.basic_publish(exchange='',
                           routing_key='pipeline_ui_queue',
                           body=json.dumps(message_body))
+    logger.info(f"INFO: Published {message_body}")
     print(" [x] Sent %r" % message_body)
     connection.close()
 
