@@ -24,10 +24,14 @@ def skip_column(context, pipeline, task_obj):
                     sc['key'] = ""
                     sc['format'] = ""
                     sc['description'] = ""
+        pipeline.logger.info(f"INFO: skip_column task is done")
         set_task_model_values(task_obj, pipeline)
     except Exception as e:
         send_error_to_prefect_cloud(e)
+        pipeline.logger.error(f"ERROR: skip_column failed with an error - {str(e)}. Setting "
+                             f"pipeline status to failed")
         task_obj.status = "Failed"
+
         task_obj.save()
 
 
@@ -60,8 +64,11 @@ def merge_columns(context, pipeline, task_obj):
             "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
                            + pipeline.model.pipeline_name
         })
+        pipeline.logger.info(f"INFO: task - merge_columns is done.")
         set_task_model_values(task_obj, pipeline)
     except Exception as e:
+        pipeline.logger.error(f"ERROR: merge_columns failed with an error - {str(e)}. Setting "
+                              f"pipeline status to failed")
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
@@ -84,8 +91,11 @@ def anonymize(context, pipeline, task_obj):
         for sc in pipeline.schema:
             if sc['key'] == col:
                 sc['format'] = names_types_dict[col]
+        pipeline.logger.info(f"INFO: task - anonymize task is done")
         set_task_model_values(task_obj, pipeline)
     except Exception as e:
+        pipeline.logger.error(f"ERROR: task - anonymize failed with an error - {str(e)}. Setting "
+                              f"pipeline status to failed")
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
@@ -103,8 +113,11 @@ def change_format(context, pipeline, task_obj):
             xml_data = json2xml.Json2xml(json_data).to_xml()
             with open(dir+result_file_name + '.xml', 'w') as f:
                 f.write(xml_data)
+            pipeline.logger.info(f"INFO: Resource format changed to xml")
             set_task_model_values(task_obj, pipeline)
         except Exception as e:
+            pipeline.logger.error(f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
+                                  f"pipeline status to failed")
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
@@ -113,8 +126,11 @@ def change_format(context, pipeline, task_obj):
             pipeline.data.to_html("data.html")
             pdfkit.from_file("data.html", dir+result_file_name + ".pdf")
             os.remove('data.html')
+            pipeline.logger.info(f"INFO: Resource format changed to pdf")
             set_task_model_values(task_obj, pipeline)
         except Exception as e:
+            pipeline.logger.error(f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
+                                  f"pipeline status to failed")
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
@@ -123,11 +139,15 @@ def change_format(context, pipeline, task_obj):
             data_string = pipeline.data.to_json(orient='records')
             with open(dir + result_file_name + ".json", "w") as f:
                 f.write(data_string)
+            pipeline.logger.info(f"INFO: Resource format changed to json")
             set_task_model_values(task_obj, pipeline)
         except Exception as e:
+            pipeline.logger.error(f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
+                                  f"pipeline status to failed")
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
+
 
 @task
 def aggregate(context, pipeline, task_obj):
@@ -153,8 +173,11 @@ def aggregate(context, pipeline, task_obj):
                 key = " ".join(map(str, key))
             new_schema.append({"key": key, "format": format, "description": description})
         pipeline.schema = new_schema
+        pipeline.logger.info(f"INFO: task - aggregate is done.")
         set_task_model_values(task_obj, pipeline)
     except Exception as e:
+        pipeline.logger.error(f"ERROR: task - aggregate failed with an error - {str(e)}. Setting "
+                              f"pipeline status to failed")
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
@@ -188,6 +211,7 @@ def query_data_resource(context, pipeline, task_obj):
 def pipeline_executor(pipeline):
     print("setting ", pipeline.model.pipeline_name, " status to In Progress")
     pipeline.model.status = "In Progress"
+    pipeline.logger.info(f"INFO: set pipeline status to - 'In progress'")
     print(pipeline.model.status)
     pipeline.model.save()
     tasks_objects = pipeline._commands
@@ -203,11 +227,13 @@ def pipeline_executor(pipeline):
         if each_task.status == "Failed":
             pipeline.model.status = "Failed"
             pipeline.model.save()
+            pipeline.logger.info(f"INFO: There was a failed task hence, setting pipeline status to failed")
             break
     # if none of the tasks failed, set pipeline status as - Done
     if pipeline.model.status != "Failed":
         pipeline.model.status = "Done"
         pipeline.model.save()
+        pipeline.logger.info(f"INFO: All tasks were successful, setting pipeline status to Done")
     pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
     print("Data after pipeline execution\n", pipeline.data)
     pipeline.model.save()

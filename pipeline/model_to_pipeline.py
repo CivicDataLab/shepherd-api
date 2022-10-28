@@ -43,7 +43,8 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
             new_pipeline.schema = fresh_schema
             update_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
+                 "logger": new_pipeline.logger})
         if db_action == "create":
             for sc in new_pipeline.schema:
                 sc.pop('id', None)
@@ -56,7 +57,8 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
             new_pipeline.schema = fresh_schema
             id = create_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema}
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
+                 "logger": new_pipeline.logger}
             )
             print("res_id created at...", id)
         return

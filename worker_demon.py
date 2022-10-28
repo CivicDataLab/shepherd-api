@@ -6,6 +6,8 @@ import pika
 from configparser import ConfigParser
 import os
 
+import log_utils
+
 config = ConfigParser()
 
 config.read("config.ini")
@@ -27,7 +29,8 @@ def main():
         body_json = json.loads(body.decode())
         print("Recieved..", body_json)
         p_id = body_json['p_id']
-        # print("got p_id as ", body_json['p_id'])
+        logger = log_utils.get_logger_for_existing_file(p_id)
+        logger.info(f"INFO: Rabbit mq worker received {body_json}")
         temp_file_name = body_json['temp_file_name']
         res_details = body_json['res_details']
         db_action = body_json['db_action']
@@ -35,6 +38,8 @@ def main():
             task_executor(p_id, temp_file_name, res_details, db_action)
         except Exception as e:
             print (e)
+        logger.info(f"INFO: Worker finished successfully")
+        logger.handlers.clear()
         print(" [x] Done")
         ch.basic_ack(delivery_tag=method.delivery_tag)
 

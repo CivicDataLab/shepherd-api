@@ -1,0 +1,2 @@
+This directory is used to maintain the logs of the pipelines run.
+file format would be pipelineid_pipelinename_day_month_year_hoour_minute_second.log
