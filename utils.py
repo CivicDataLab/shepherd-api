@@ -68,6 +68,7 @@ def create_resource(res_dict):
     """
     res_details = res_dict['res_details']
     resource_name = res_details['data']['resource']['title']
+    org_id = res_details['data']['resource']['dataset']['catalog']['organization']['id']
     data = res_dict['data']
     schema = res_dict['schema']
     schema = json.dumps(schema)
@@ -110,7 +111,7 @@ def create_resource(res_dict):
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
     try:
-        response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files)
+        response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files, org_id)
         print(response_json)
         logger.info(f"INFO: Created resource at - {response_json['data']['create_resource']['resource']['id']}")
         return response_json['data']['create_resource']['resource']['id']
@@ -126,6 +127,7 @@ def update_resource(res_dict):
     """ Description of create_resource applies to this method as-well"""
     res_details = res_dict['res_details']
     resource_name = res_details['data']['resource']['title']
+    org_id = res_details['data']['resource']['dataset']['catalog']['organization']['id']
     data = res_dict['data']
     schema = res_dict['schema']
     schema = json.dumps(schema)
@@ -167,7 +169,7 @@ def update_resource(res_dict):
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
     try:
-        response_json = graphql_service.update_resource(res_details, file_format, schema, files)
+        response_json = graphql_service.update_resource(res_details, file_format, schema, files, org_id)
         logger.info(f"INFO: Updated the resource. Response is - {response_json}")
         print("updateresource.", response_json)
     except Exception as e:

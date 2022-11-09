@@ -34,6 +34,11 @@ def resource_query(res_id, access_token=None):
           remote_modified
           period_from
           period_to
+          catalog{{
+            organization{{
+             id
+            }}
+          }}
           update_frequency
           modified
           status
@@ -61,7 +66,7 @@ def resource_query(res_id, access_token=None):
 
 
 @get_sys_token
-def create_resource(resource_name, description, schema, file_format, files, access_token=None):
+def create_resource(resource_name, description, schema, file_format, files, org_id, access_token=None):
     query = f"""mutation 
         mutation_create_resource($file: Upload!) 
         {{create_resource(
@@ -77,7 +82,7 @@ def create_resource(resource_name, description, schema, file_format, files, acce
     print(query)
     variables = {"file": None}
     map = json.dumps({"0": ["variables.file"]})
-    headers = {"Authorization": access_token}
+    headers = {"Authorization": access_token, "organization": org_id}
     operations = json.dumps({
         "query": query,
         "variables": variables,
@@ -93,7 +98,7 @@ def create_resource(resource_name, description, schema, file_format, files, acce
 
 
 @get_sys_token
-def update_resource(res_details, file_format, schema, files, access_token=None):
+def update_resource(res_details, file_format, schema, files, org_id, access_token=None):
     variables = {"file": None}
 
     map = json.dumps({"0": ["variables.file"]})
@@ -116,7 +121,7 @@ def update_resource(res_details, file_format, schema, files, access_token=None):
                 }}"""
 
     print(query)
-    headers = {"Authorization": access_token}
+    headers = {"Authorization": access_token, "organization": org_id}
     operations = json.dumps({
         "query": query,
         "variables": variables

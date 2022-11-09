@@ -26,9 +26,10 @@ def transformer_list(request):
         {"name": "change_format", "context": [
             {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
         {"name": "anonymize", "context": [
-            {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
-            {"name": "replace_val", "type": "string", "desc": "Replacement string"},
-            {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"}
+            {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"},
+            {"name": "option", "type": "field_single", "desc": "Choose an option to anonymize"},
+            {"name": "special_char", "type": "field_single", "desc": "Choose a special character"},
+            {"name": "n", "type": "string", "desc": "Please enter value of n"}
         ]},
         {"name": "aggregate", "context": [
             {"name": "index", "type": "field_single", "desc": "Field that is needed as index"},
