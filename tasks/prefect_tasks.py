@@ -1,4 +1,5 @@
 import os
+import random
 import re
 
 import pandas as pd
@@ -77,13 +78,42 @@ def merge_columns(context, pipeline, task_obj):
 @task
 def anonymize(context, pipeline, task_obj):
     # TODO - decide on the context contents
-    to_replace = context['to_replace']
-    replace_val = context['replace_val']
+    option = context['option']
+    special_char = context['special_char']
     col = context['column']
+    n = context['n']
+    if option == "replace_nth":
+        n = int(n) - 1
     try:
-        df_updated = pipeline.data[col].astype(str).str.replace(re.compile(to_replace, re.IGNORECASE), replace_val)
-        df_updated = df_updated.to_frame()
-        pipeline.data[col] = df_updated[col]
+        df_col_values = pipeline.data[col].values.tolist()
+        new_vals = []
+        for val in df_col_values:
+            if option == "replace_all":
+                if special_char == "random":
+                    replace_val = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=len(val)))
+                    new_vals.append(replace_val)
+                else:
+                    replace_val = special_char * len(val)
+                    new_vals.append(replace_val)
+            elif option == "replace_nth":
+                if special_char == "random":
+                    replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
+                    replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
+                    new_vals.append(replace_val)
+                else:
+                    replace_val = val[0:int(n)] + special_char + val[int(n) + 1:]
+                    new_vals.append(replace_val)
+            elif option == "retain_first_n":
+                if special_char == "random":
+                    replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=(len(val) - int(n))))
+                    replace_val = val[:int(n)] + replacement
+                    new_vals.append(replace_val)
+                else:
+                    replace_val = val[:int(n)] + (special_char * (len(val) - int(n)))
+                    print("inside fn and rep is", replace_val)
+                    new_vals.append(replace_val)
+        pipeline.data[col] = new_vals
+
         data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
                                                    convert_integer=True, convert_boolean=True, convert_floating=True)
         names_types_dict = data_schema.dtypes.astype(str).to_dict()
