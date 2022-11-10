@@ -39,8 +39,8 @@ def create_pipeline(post_data, pipeline_name):
     data_url = data_download_url + str(res_id)
     try:
         response = graphql_service.resource_query(res_id)
-        dataset_id = response['data']['resource']['dataset']['id']
         print(response)
+        dataset_id = response['data']['resource']['dataset']['id']
     except Exception as e:
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
     transformers_list = [i for i in transformers_list if i]

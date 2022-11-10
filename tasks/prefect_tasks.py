@@ -110,7 +110,6 @@ def anonymize(context, pipeline, task_obj):
                     new_vals.append(replace_val)
                 else:
                     replace_val = val[:int(n)] + (special_char * (len(val) - int(n)))
-                    print("inside fn and rep is", replace_val)
                     new_vals.append(replace_val)
         pipeline.data[col] = new_vals
 

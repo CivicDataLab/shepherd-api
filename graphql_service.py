@@ -60,8 +60,11 @@ def resource_query(res_id, access_token=None):
       }}
     }}
     """
-    headers = {"Authorization": "Bearer" + access_token}  # {"Authorization": "Bearer YOUR API KEY"}
-    request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
+    headers = {"Authorization": access_token}  # {"Authorization": "Bearer YOUR API KEY"}
+    try:
+        request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
+    except Exception as e:
+        print(str(e))
     return json.loads(request.text)
 
 
