@@ -27,8 +27,8 @@ def transformer_list(request):
             {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
         {"name": "anonymize", "context": [
             {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"},
-            {"name": "option", "type": "field_single", "desc": "Choose an option to anonymize"},
-            {"name": "special_char", "type": "field_single", "desc": "Choose a special character"},
+            {"name": "option", "type": "option_single", "desc": "Choose an option to anonymize"},
+            {"name": "special_char", "type": "special_char_single", "desc": "Choose a special character"},
             {"name": "n", "type": "string", "desc": "Please enter value of n"}
         ]},
         {"name": "aggregate", "context": [
