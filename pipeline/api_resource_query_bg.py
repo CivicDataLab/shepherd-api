@@ -78,7 +78,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns="",
   }}
 }}
 """
-    headers = {"Authorization": "Bearer" + access_token}
+    headers = {"Authorization": access_token}
     request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
     response = json.loads(request.text)
     print(response)
