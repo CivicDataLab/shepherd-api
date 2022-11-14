@@ -10,5 +10,6 @@ urlpatterns = [
     path('res_transform', csrf_exempt(views.res_transform), name='res_transform'),
     path('pipeline_filter', csrf_exempt(views.pipeline_filter), name='pipeline_filter'),
     path('custom_data_viewer', csrf_exempt(views.custom_data_viewer), name='custom_data_viewer'),
-    path('api_source_query', csrf_exempt(views.api_source_query), name='api_source_query')
+    path('api_source_query', csrf_exempt(views.api_source_query), name='api_source_query'),
+    path('api_res_transform', csrf_exempt(views.api_res_transform), name='api_res_transform')
 ]

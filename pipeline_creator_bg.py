@@ -50,7 +50,7 @@ def create_pipeline(post_data, pipeline_name):
         p.status = "Created"
         logger.info(f"INFO: Pipeline created")
         p.dataset_id = dataset_id
-        p.resource_id = res_id
+        p.resource_identifier = res_id
         p.save()
     except Exception as e:
         data = None
