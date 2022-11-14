@@ -59,7 +59,7 @@ def pipeline_filter(request):
             tasks_list.append(t_data)
         data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
                 'output_id': each.output_id, 'created_at': each.created_at,
-                'status': each.status, 'resource_id': each.resource_id, 'tasks': tasks_list
+                'status': each.status, 'resource_id': each.resource_identifier, 'tasks': tasks_list
                 }
         resp_list.append(data)
 
@@ -164,21 +164,49 @@ def res_transform(request):
         return JsonResponse(context, safe=False)
 
 
-def api_source_query(request):
-    if request.method == 'GET':
-        api_source_id = request.GET.get('api_source_id', None)
-        request_id = request.GET.get('request_id', None)
-        request_columns = request.GET.get('request_columns', "")
-        request_rows = request.GET.get('request_rows', "")
-        pipeline_name = api_source_id + "-" + str(uuid.uuid4())
-        p = Pipeline(status="Created", pipeline_name=pipeline_name)
+def api_res_transform(request):
+    # save the pipeline data against api resource id
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        api_source_id = post_data.get('api_source_id', None)
+        transformers_list = post_data.get('transformers_list', None)
+        transformers_list = [i for i in transformers_list if i]
+        pipeline_name = post_data.get('pipeline_name', None)
+        p = Pipeline(status="Created", pipeline_name=pipeline_name, resource_identifier=str(api_source_id))
+        print(api_source_id)
+        print("***", p.resource_identifier)
+        p.save()
+        p_id = p.pk
+
+        for _, each in enumerate(transformers_list):
+            task_name = each.get('name', None)
+            task_order_no = each.get('order_no', None)
+            task_context = each.get('context', None)
+            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
         p.save()
 
-        p_id = p.pk
+        context = {"result": p_id, "Success": True}
+        return JsonResponse(context, safe=False)
+
+
+def api_source_query(request):
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        api_source_id = str(post_data.get('api_source_id', None))
+        request_id = post_data.get('request_id', None)
+        request_columns = post_data.get('request_columns', "")
+        request_rows = post_data.get('request_rows', "")
+        try:
+            pipeline_object = list(Pipeline.objects.filter(resource_identifier=api_source_id))[-1]
+            p_id = getattr(pipeline_object, "pipeline_id")
+        except Exception as e:
+            print(str(e))
+            p_id = None
         api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows)
 
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
+
 
 
 def custom_data_viewer(request):

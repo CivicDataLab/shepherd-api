@@ -1,15 +1,18 @@
 import json
 import os
+import uuid
 from io import StringIO
 
 import pandas as pd
 import requests
 from background_task import background
 
+import log_utils
 from datatransform.models import Pipeline
 from access_token_decorator import get_sys_token
 from configparser import ConfigParser
 import os
+from pipeline.model_to_pipeline import task_executor
 
 config = ConfigParser()
 
@@ -19,11 +22,9 @@ graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_
 
 @background(queue="api_res_operation")
 @get_sys_token
-def api_resource_query_task(p_id, api_source_id, request_id, request_columns="", request_rows="", access_token=None):
+def api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows, access_token=None):
     print(api_source_id)
-    pipeline_object = Pipeline.objects.get(pk=p_id)
-    pipeline_object.status = "In Progress"
-    pipeline_object.save()
+    print(request_id)
     query = f"""{{
   resource(resource_id: {api_source_id}) {{
     id
@@ -125,9 +126,18 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns="",
         file_path = str(p_id) + "-data.json"
     if response_type == "CSV":
         csv_data = StringIO(api_response)
-        data = pd.read_csv(csv_data, sep=";")
+        data = pd.read_csv(csv_data, sep=",")
+        temp_file_name = uuid.uuid4().hex
+        if p_id != None:
+            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+            logger.info("INFO: Received API resource with pre-saved pipeline details")
+            if not data.empty:
+                data.to_pickle(temp_file_name)
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "")
+        else:
+            transformed_data = data
         if request_columns == "":
-            column_selected_df = data
+            column_selected_df = transformed_data
         else:
             column_selected_df = data.loc[:, data.columns.isin(request_columns.split(","))]
         # if row length is not specified return all rows
@@ -136,9 +146,8 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns="",
         else:
             num_rows_int = int(request_rows)
             final_df = column_selected_df.iloc[:num_rows_int]
-        with open(str(p_id) + "-data.csv", 'w') as f:
-            f.write(final_df)
-        file_path = str(p_id) + "-data.csv"
+        final_df.to_csv(str(p_id) + "-data.csv")
+    file_path = str(p_id) + "-data.csv"
     status = "FETCHED"
     files = [
         ('0', (file_path, open(file_path, 'rb'), response_type))
@@ -177,6 +186,4 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns="",
     finally:
         files[0][1][1].close()
         os.remove(file_path)
-        pipeline_object.status = "Done"
-        pipeline_object.save()
 

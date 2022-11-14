@@ -13,7 +13,6 @@ mod = __import__('tasks', fromlist=settings.tasks.values())
 def task_executor(pipeline_id, data_pickle, res_details, db_action):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
-    data = Pipeline.objects.get(pk=pipeline_id)
     try:
         data = None
         try:
@@ -30,8 +29,11 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         def execution_from_model(task):
             new_pipeline.add(task)
 
-        new_pipeline.schema = res_details['data']['resource']['schema']
         [execution_from_model(task) for task in tasks]
+        if res_details == "api_res":
+            prefect_tasks.pipeline_executor(new_pipeline)
+            return new_pipeline.data
+        new_pipeline.schema = res_details['data']['resource']['schema']
         prefect_tasks.pipeline_executor(new_pipeline)
         if new_pipeline.model.status == "Failed":
             raise Exception("There was an error while running the pipeline")
