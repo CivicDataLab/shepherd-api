@@ -11,7 +11,7 @@ class Pipeline(models.Model):
     created_at     = models.DateTimeField(default=datetime.datetime.now) 
     status         = models.CharField(max_length=50)
     dataset_id     = models.CharField(max_length=50)
-    resource_id    = models.CharField(max_length=50)
+    resource_identifier    = models.CharField(max_length=50, null=True)
     # tasks = list()
 
 class Task(models.Model):
@@ -24,8 +24,5 @@ class Task(models.Model):
     result_url     = models.CharField(max_length=500)
     Pipeline_id    = models.ForeignKey(Pipeline, on_delete=models.CASCADE)
     output_id      = models.CharField(max_length=200, default="")
-
-    
-
 
 
