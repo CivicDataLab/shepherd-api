@@ -29,7 +29,7 @@ def transformer_list(request):
             {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"},
             {"name": "option", "type": "option_single", "desc": "Choose an option to anonymize"},
             {"name": "special_char", "type": "special_char_single", "desc": "Choose a special character"},
-            {"name": "n", "type": "string", "desc": "Please enter value of n"}
+            {"name": "n", "type": "n_type", "desc": "Please enter value of n"}
         ]},
         {"name": "aggregate", "context": [
             {"name": "index", "type": "field_single", "desc": "Field that is needed as index"},
