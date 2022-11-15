@@ -67,6 +67,8 @@ def create_resource(res_dict):
     file format field in the graphql query there are some if else statements involved here.
     """
     res_details = res_dict['res_details']
+    print("%%%%%",res_details)
+    dataset_id = res_details['data']['resource']['dataset']['id']
     resource_name = res_details['data']['resource']['title']
     org_id = res_details['data']['resource']['dataset']['catalog']['organization']['id']
     data = res_dict['data']
@@ -111,7 +113,8 @@ def create_resource(res_dict):
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
     try:
-        response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files, org_id)
+        response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files, org_id,
+                                                        dataset_id)
         print(response_json)
         logger.info(f"INFO: Created resource at - {response_json['data']['create_resource']['resource']['id']}")
         return response_json['data']['create_resource']['resource']['id']
