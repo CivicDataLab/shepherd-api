@@ -128,11 +128,14 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
         temp_file_name = uuid.uuid4().hex
-        if p_id != None:
+        if p_id is not None:
             logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
             logger.info("INFO: Received API resource with pre-saved pipeline details")
             if not data.empty:
                 data.to_pickle(temp_file_name)
+            pipeline_obj = Pipeline.objects.get(pk=p_id)
+            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+            pipeline_obj.save()
             transformed_data = task_executor(p_id, temp_file_name, "api_res", "")
         else:
             transformed_data = data
