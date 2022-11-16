@@ -33,6 +33,9 @@ def create_pipeline(post_data, pipeline_name):
     logger = log_utils.set_log_file(p_id, pipeline_name)
     transformers_list = post_data.get('transformers_list', None)
     res_id = post_data.get('res_id', None)
+    dataset_id = post_data.get('dataset_id', None)
+    p.dataset_id = dataset_id
+    p.save()
     db_action = post_data.get('db_action', None)
     logger.info(f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
                 f"{transformers_list}")
@@ -40,7 +43,6 @@ def create_pipeline(post_data, pipeline_name):
     try:
         response = graphql_service.resource_query(res_id)
         print(response)
-        dataset_id = response['data']['resource']['dataset']['id']
     except Exception as e:
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
     transformers_list = [i for i in transformers_list if i]
@@ -49,12 +51,12 @@ def create_pipeline(post_data, pipeline_name):
         p = Pipeline.objects.get(pk=p_id)
         p.status = "Created"
         logger.info(f"INFO: Pipeline created")
-        p.dataset_id = dataset_id
         p.resource_identifier = res_id
         p.save()
     except Exception as e:
         data = None
-
+        p.status = "Failed"
+        p.save()
     for _, each in enumerate(transformers_list):
         task_name = each.get('name', None)
         task_order_no = each.get('order_no', None)
