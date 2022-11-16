@@ -150,7 +150,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             num_rows_int = int(request_rows)
             final_df = column_selected_df.iloc[:num_rows_int]
         final_df.to_csv(str(p_id) + "-data.csv")
-    file_path = str(p_id) + "-data.csv"
+        file_path = str(p_id) + "-data.csv"
     status = "FETCHED"
     files = [
         ('0', (file_path, open(file_path, 'rb'), response_type))
