@@ -169,10 +169,11 @@ def api_res_transform(request):
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))
         api_source_id = post_data.get('api_source_id', None)
+        dataset_id = post_data.get('dataset_id', None)
         transformers_list = post_data.get('transformers_list', None)
         transformers_list = [i for i in transformers_list if i]
         pipeline_name = post_data.get('pipeline_name', None)
-        p = Pipeline(status="Created", pipeline_name=pipeline_name, resource_identifier=str(api_source_id))
+        p = Pipeline(status="Created", pipeline_name=pipeline_name, resource_identifier=str(api_source_id), dataset_id=dataset_id)
         print(api_source_id)
         print("***", p.resource_identifier)
         p.save()
