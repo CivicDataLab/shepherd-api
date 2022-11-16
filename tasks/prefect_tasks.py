@@ -81,9 +81,6 @@ def anonymize(context, pipeline, task_obj):
     option = context['option']
     special_char = context['special_char']
     col = context['column']
-    n = context['n']
-    if option == "replace_nth":
-        n = int(n) - 1
     try:
         df_col_values = pipeline.data[col].values.tolist()
         new_vals = []
@@ -96,6 +93,8 @@ def anonymize(context, pipeline, task_obj):
                     replace_val = special_char * len(val)
                     new_vals.append(replace_val)
             elif option == "replace_nth":
+                n = context.get('n')
+                n = int(n) - 1
                 if special_char == "random":
                     replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
                     replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
@@ -104,6 +103,7 @@ def anonymize(context, pipeline, task_obj):
                     replace_val = val[0:int(n)] + special_char + val[int(n) + 1:]
                     new_vals.append(replace_val)
             elif option == "retain_first_n":
+                n = context.get('n')
                 if special_char == "random":
                     replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=(len(val) - int(n))))
                     replace_val = val[:int(n)] + replacement
