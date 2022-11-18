@@ -80,6 +80,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
 }}
 """
     headers = {"Authorization": access_token}
+    file_name = "api_resource-" + str(uuid.uuid4().hex)[0:5] # name of the file to be uploaded
     request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
     response = json.loads(request.text)
     print(response)
@@ -121,9 +122,9 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     api_response = api_request.text
     if response_type == "JSON":
         print("in if...")
-        with open(str(p_id) + "-data.json", 'w') as f:
+        with open(file_name + "-data.json", 'w') as f:
             f.write(api_response)
-        file_path = str(p_id) + "-data.json"
+        file_path = file_name + "-data.json"
     if response_type == "CSV":
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
@@ -149,8 +150,8 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         else:
             num_rows_int = int(request_rows)
             final_df = column_selected_df.iloc[:num_rows_int]
-        final_df.to_csv(str(p_id) + "-data.csv")
-        file_path = str(p_id) + "-data.csv"
+        final_df.to_csv(file_name + "-data.csv")
+        file_path = file_name + "-data.csv"
     status = "FETCHED"
     files = [
         ('0', (file_path, open(file_path, 'rb'), response_type))
