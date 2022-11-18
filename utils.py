@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import uuid
 from fileinput import close
 
 import ckanapi
@@ -69,7 +70,7 @@ def create_resource(res_dict):
     res_details = res_dict['res_details']
     print("%%%%%",res_details)
     dataset_id = res_details['data']['resource']['dataset']['id']
-    resource_name = res_details['data']['resource']['title']
+    resource_name = res_details['data']['resource']['title'] + "-" + (str(uuid.uuid4().hex)[0:5])
     org_id = res_details['data']['resource']['dataset']['catalog']['organization']['id']
     data = res_dict['data']
     schema = res_dict['schema']
