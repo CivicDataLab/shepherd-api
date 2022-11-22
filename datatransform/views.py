@@ -107,9 +107,8 @@ def pipe_create(request):
 
         p_id = p.pk
 
-        logger = log_utils.set_log_file(p_id, pipeline_name)
-        logger.info("INFO: New pipeline is created with id - ",p_id)
-        transformers_list = post_data.get('transformers_list', None)
+        # logger = log_utils.set_log_file(p_id, pipeline_name)
+        # logger.info("INFO: New pipeline is created with id - ",p_id)
 
         res_id = post_data.get('res_id', None)
         dataset_id = post_data.get('dataset_id', None)

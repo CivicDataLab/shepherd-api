@@ -31,6 +31,7 @@ def create_pipeline(p_id, post_data):
     logger.info(f"INFO:Received request to create pipeline {pipeline_name}")
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
+    dataset_id = post_data.get('dataset_id', None)
     data_url = data_download_url + str(res_id)
     transformers_list = post_data.get('transformers_list', None)
     for _, each in enumerate(transformers_list):
@@ -40,19 +41,35 @@ def create_pipeline(p_id, post_data):
         pipeline_object.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
     try:
         response = graphql_service.resource_query(res_id)
-        print(response)
-    except Exception as e:
-        logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
-    try:
+
         data = read_data(data_url)
+
         pipeline_object.status = "Created"
         logger.info(f"INFO: Pipeline created")
         pipeline_object.save()
+        if db_action == "create":
+            temp_csv_file = uuid.uuid4().hex + ".csv"
+            data.to_csv(temp_csv_file)
+            resource_name = response['data']['resource']['title']
+            description = response['data']['resource']['description']
+            schema = response['data']['resource']['schema']
+            file_format = response['data']['resource']['file_details']['format']
+            org_id = response['data']['resource']['dataset']['catalog']['organization']['id']
+            files = [
+                ('0', (temp_csv_file, open(temp_csv_file, 'rb'), 'text/csv'))
+            ]
+            new_res_id = graphql_service.create_resource(resource_name, description, schema, file_format,
+                                                         files, org_id, dataset_id)
+            pipeline_object.new_resource_id = new_res_id
+            pipeline_object.save()
+            os.remove(temp_csv_file)
     except Exception as e:
         data = None
         pipeline_object.status = "Failed"
         pipeline_object.save()
+        logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
 
+    # create a copy of the resource to apply transformations
     temp_file_name = uuid.uuid4().hex
     if not data.empty:
         data.to_pickle(temp_file_name)
