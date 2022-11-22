@@ -5,13 +5,14 @@ import datetime
 
 
 class Pipeline(models.Model):
-    pipeline_id    = models.AutoField(primary_key=True)
-    pipeline_name  = models.CharField(max_length=100, default="")
-    output_id      = models.CharField(max_length=200, default="")
-    created_at     = models.DateTimeField(default=datetime.datetime.now) 
-    status         = models.CharField(max_length=50)
-    dataset_id     = models.CharField(max_length=50)
-    resource_identifier    = models.CharField(max_length=50, null=True)
+    pipeline_id = models.AutoField(primary_key=True)
+    pipeline_name = models.CharField(max_length=100, default="")
+    output_id = models.CharField(max_length=200, default="")
+    created_at = models.DateTimeField(default=datetime.datetime.now)
+    status = models.CharField(max_length=50)
+    dataset_id = models.CharField(max_length=50)
+    resource_identifier = models.CharField(max_length=50, null=True)
+    new_resource_id = models.CharField(max_length=50, null=True)
     # tasks = list()
 
 class Task(models.Model):

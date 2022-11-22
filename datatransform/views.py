@@ -2,6 +2,7 @@ import pika
 import requests
 from background_task.models import CompletedTask
 
+import log_utils
 from pipeline.api_resource_query_bg import api_resource_query_task
 import pipeline_creator_bg
 from .models import Task, Pipeline
@@ -90,62 +91,6 @@ def pipe_list(request):
     return JsonResponse(context, safe=False)
 
 
-def pipe_create(request):
-    if request.method == 'POST':
-
-        # print("enter")
-        # print(request.body)
-
-        post_data = json.loads(request.body.decode('utf-8'))
-        print("#####", post_data)
-        transformers_list = post_data.get('transformers_list', None)
-        data_url = post_data.get('data_url', None)
-        org_name = post_data.get('org_name', None)
-        pipeline_name = post_data.get('name', '')
-        print("*******", transformers_list)
-        # print(data_url, transformers_list)
-        transformers_list = [i for i in transformers_list if i]
-        try:
-            data = read_data(data_url)
-        except Exception as e:
-            data = None
-
-        p = Pipeline(status="Created", pipeline_name=pipeline_name)
-
-        # p.output_id = upload_dataset(pipeline_name, org_name)
-        p.save()
-
-        p_id = p.pk
-
-        for _, each in enumerate(transformers_list):
-            task_name = each.get('name', None)
-            task_order_no = each.get('order_no', None)
-            task_context = each.get('context', None)
-
-            p = Pipeline.objects.get(pk=p_id)
-            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
-        temp_file_name = uuid.uuid4().hex
-        if not data.empty:
-            data.to_pickle(temp_file_name)
-        message_body = {
-            'p_id': p_id,
-            'temp_file_name': temp_file_name,
-            'res_details': ""
-        }
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
-        channel = connection.channel()
-
-        channel.queue_declare(queue='pipeline_ui_queue')
-        channel.basic_publish(exchange='',
-                              routing_key='pipeline_ui_queue',
-                              body=json.dumps(message_body))
-        print(" [x] Sent %r" % message_body)
-        connection.close()
-        context = {"result": p_id, "Success": True}
-        return JsonResponse(context, safe=False)
-
-
 def read_data(data_url):
     all_data = pd.read_csv(data_url)
     all_data.fillna(value="", inplace=True)
@@ -153,7 +98,56 @@ def read_data(data_url):
     return all_data
 
 
+def pipe_create(request):
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        pipeline_name = post_data.get('pipeline_name', None)
+        p = Pipeline(status="Created", pipeline_name=pipeline_name)
+        p.save()
+
+        p_id = p.pk
+
+        logger = log_utils.set_log_file(p_id, pipeline_name)
+        logger.info("INFO: New pipeline is created with id - ",p_id)
+        transformers_list = post_data.get('transformers_list', None)
+
+        res_id = post_data.get('res_id', None)
+        dataset_id = post_data.get('dataset_id', None)
+        db_action = post_data.get('db_action', None)
+        # if the task is to create new res - new_res_id is returned at next step.
+        if db_action == "create":
+            new_res_id = None
+        else:
+            new_res_id = res_id
+            p.new_resource_id = res_id
+        p.dataset_id = dataset_id
+        p.resource_identifier = res_id
+        p.save()
+        for _, each in enumerate(transformers_list):
+            task_name = each.get('name', None)
+            task_order_no = each.get('order_no', None)
+            task_context = each.get('context', None)
+            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
+
+        pipeline_creator_bg.create_pipeline(p_id, post_data)
+        context = {"result": {
+            "p_id": p_id,
+            "new_res_id": new_res_id
+        },
+            "Success": True}
+        return JsonResponse(context, safe=False)
+
+
+
 def res_transform(request):
+    """ Triggers pipeline_creator_bg background task.
+    Get individual task from the front-end and return pipeline id and res_id
+    create a pipeline for the first task and run it.
+    when the second task is received get pipeline id and check if it exists
+    if yes add the task against p-id and get last task i.e created status
+    from the tasks list and execute and update
+
+    """
     """ Triggers pipeline_creator_bg background task. """
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))

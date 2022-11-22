@@ -2,23 +2,21 @@ import pandas as pd
 import json
 
 def get_parent_key(json_data, fields_list):
-    str_data = json.dumps(json_data)
-    json_data = json.loads(str_data.__dict__)
-
-    for item in json_data:
-        print("item is...", item, " and the type is....", type(item))
-        item = json.load(item)
-        print("type is now...", type(item))
-        if isinstance(item, list):
-            print("item keys are-----", item[0].keys())
-        if isinstance(item, list) and fields_list in [item[0].keys()]:
-            return item
+    print(type(json_data))
+    for key in json_data:
+        # if the key is of type - list and the elements are of dict type then you can search for the records
+        if isinstance(json_data[key], list) and isinstance(json_data[key][0], dict):
+            list_of_keys =list(json_data[key][0].keys())
+            print(type(list_of_keys))
+            if (all(x in list_of_keys for x in fields_list)):
+                 return key
+    return None
 
 
+f = open("data.json")
+data = json.load(f)
 
-with open('data.json') as f:
-    d = json.load(f)
-parent = get_parent_key(d, ["d", "initiationtype"])
+parent = get_parent_key(data, ["d", "tag"])
 print(parent)
 
 # df = pd.read_csv("bos2021ModC.csv")
