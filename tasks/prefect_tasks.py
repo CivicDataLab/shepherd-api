@@ -39,27 +39,30 @@ def skip_column(context, pipeline, task_obj):
 @task
 def merge_columns(context, pipeline, task_obj):
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
+    retain_cols = context['retain_cols']
     separator = context['separator']
 
     try:
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
             .astype(str)
-        pipeline.data = pipeline.data.drop([column1, column2], axis=1)
+        if retain_cols == "no":
+            pipeline.data = pipeline.data.drop([column1, column2], axis=1)
 
         """ setting up the schema after task"""
         data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
                                                    convert_integer=True, convert_boolean=True, convert_floating=True)
         names_types_dict = data_schema.dtypes.astype(str).to_dict()
         new_col_format = names_types_dict[output_column]
-        for sc in pipeline.schema:
-            if sc['key'] == column1:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-            if sc['key'] == column2:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
+        if retain_cols == "no":
+            for sc in pipeline.schema:
+                if sc['key'] == column1:
+                    sc['key'] = ""
+                    sc['format'] = ""
+                    sc['description'] = ""
+                if sc['key'] == column2:
+                    sc['key'] = ""
+                    sc['format'] = ""
+                    sc['description'] = ""
         pipeline.schema.append({
             "key": output_column, "format": new_col_format,
             "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "

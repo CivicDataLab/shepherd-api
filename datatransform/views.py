@@ -22,7 +22,8 @@ def transformer_list(request):
             {"name": "column1", "type": "field_single", "desc": "Please select first column name"},
             {"name": "column2", "type": "field_single", "desc": "Please select second column name"},
             {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
-            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
+            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"},
+            {"name": "retain_cols", "type": "boolean", "desc": "Whether top retain the merged columns"}
         ]},
         {"name": "change_format", "context": [
             {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
