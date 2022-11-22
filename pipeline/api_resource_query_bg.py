@@ -79,7 +79,23 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
   }}
 }}
 """
+    data_request_query =f""" 
+    {{
+    data_request(data_request_id: {request_id}) {{
+        id
+        status
+        resource {{
+            id
+            schema_exists
+        }}
+    }}
+}}
+"""
     headers = {"Authorization": access_token}
+    get_datarequest_details = requests.post(graph_ql_url, json={'query': data_request_query},
+                                         headers=headers)
+    datarequest_response = get_datarequest_details.text
+    print(datarequest_response)
     file_name = "api_resource-" + str(uuid.uuid4().hex)[0:5] # name of the file to be uploaded
     request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
     response = json.loads(request.text)
