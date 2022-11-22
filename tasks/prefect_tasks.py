@@ -190,19 +190,19 @@ def aggregate(context, pipeline, task_obj):
     columns = columns.split(",")
     values = values.split(",")
     try:
-        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
+        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values, aggfunc='count')
         inferred_schema = build_table_schema(pipeline.data)
         fields = inferred_schema['fields']
         new_schema = []
         for field in fields:
             key = field['name']
             description = ""
-            format = field['type']
+            format = "integer"
             for sc in pipeline.schema:
                 if sc['key'] == key or sc['key'] == key[0]:
                     description = sc['description']
             if isinstance(key, tuple):
-                key = " ".join(map(str, key))
+                key = "-".join(map(str, key))
             new_schema.append({"key": key, "format": format, "description": description})
         pipeline.schema = new_schema
         pipeline.logger.info(f"INFO: task - aggregate is done.")
