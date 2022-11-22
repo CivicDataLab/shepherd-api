@@ -45,7 +45,7 @@ def merge_columns(context, pipeline, task_obj):
     try:
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
             .astype(str)
-        if retain_cols == "False":
+        if retain_cols == "false":
             pipeline.data = pipeline.data.drop([column1, column2], axis=1)
 
         """ setting up the schema after task"""
@@ -53,7 +53,7 @@ def merge_columns(context, pipeline, task_obj):
                                                    convert_integer=True, convert_boolean=True, convert_floating=True)
         names_types_dict = data_schema.dtypes.astype(str).to_dict()
         new_col_format = names_types_dict[output_column]
-        if retain_cols == "False":
+        if retain_cols == "false":
             for sc in pipeline.schema:
                 if sc['key'] == column1:
                     sc['key'] = ""
