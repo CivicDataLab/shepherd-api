@@ -123,11 +123,6 @@ def pipe_create(request):
         p.dataset_id = dataset_id
         p.resource_identifier = res_id
         p.save()
-        for _, each in enumerate(transformers_list):
-            task_name = each.get('name', None)
-            task_order_no = each.get('order_no', None)
-            task_context = each.get('context', None)
-            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
 
         pipeline_creator_bg.create_pipeline(p_id, post_data)
         context = {"result": {

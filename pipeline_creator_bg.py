@@ -32,6 +32,12 @@ def create_pipeline(p_id, post_data):
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
     data_url = data_download_url + str(res_id)
+    transformers_list = post_data.get('transformers_list', None)
+    for _, each in enumerate(transformers_list):
+        task_name = each.get('name', None)
+        task_order_no = each.get('order_no', None)
+        task_context = each.get('context', None)
+        pipeline_object.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
     try:
         response = graphql_service.resource_query(res_id)
         print(response)
