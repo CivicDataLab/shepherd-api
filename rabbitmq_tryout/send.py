@@ -1,13 +1,17 @@
-import random
-import re
+# Create a simple dataframe
 
+# importing pandas as pd
 import pandas as pd
-import json
-import pandas as pd
-with open('data.json', 'rb') as f:
-    data = json.load(f)
-# df = pd.DataFrame(data)
-records = data['records']
-print(records)
-df = pd.DataFrame(records)
-print(df.columns)
+import numpy as np
+
+# creating a dataframe
+df = pd.DataFrame({'A': ['John', 'Boby', 'Mina', 'Peter', 'Nicky', "XYZ", 'Peter'],
+	'B': ['Masters', 'Graduate', 'Graduate', 'Masters', 'Graduate', 'Graduate', 'Masters'],
+	'C': [27, 23, 21, 23, 24, 21, 21],
+    'D':["q","q","q","q","q", "q", "q"]})
+print(df)
+# Creates a pivot table dataframe
+table = pd.pivot_table(df, index ='C',
+						columns =['B'],aggfunc = "count")
+
+print(table)
