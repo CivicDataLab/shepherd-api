@@ -32,7 +32,6 @@ def create_pipeline(p_id, post_data):
     res_id = post_data.get('res_id', None)
     db_action = post_data.get('db_action', None)
     dataset_id = post_data.get('dataset_id', None)
-    data_url = data_download_url + str(res_id)
     transformers_list = post_data.get('transformers_list', None)
     for _, each in enumerate(transformers_list):
         task_name = each.get('name', None)
@@ -40,14 +39,17 @@ def create_pipeline(p_id, post_data):
         task_context = each.get('context', None)
         pipeline_object.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
     try:
-        response = graphql_service.resource_query(res_id)
-
-        data = read_data(data_url)
-
-        pipeline_object.status = "Created"
-        logger.info(f"INFO: Pipeline created")
-        pipeline_object.save()
         if db_action == "create":
+            response = graphql_service.resource_query(res_id)
+
+            data_url = data_download_url + str(res_id)
+
+            data = read_data(data_url)
+
+            pipeline_object.status = "Created"
+            logger.info(f"INFO: Pipeline created")
+            pipeline_object.save()
+
             temp_csv_file = uuid.uuid4().hex + ".csv"
             data.to_csv(temp_csv_file)
             resource_name = response['data']['resource']['title']
@@ -62,7 +64,13 @@ def create_pipeline(p_id, post_data):
                                                          files, org_id, dataset_id)
             pipeline_object.new_resource_id = new_res_id
             pipeline_object.save()
+            files[0][1][1].close()
             os.remove(temp_csv_file)
+        elif db_action == "update":
+            res_id = pipeline_object.new_resource_id
+            response = graphql_service.resource_query(res_id)
+            data_url = data_download_url + str(res_id)
+            data = read_data(data_url)
     except Exception as e:
         data = None
         pipeline_object.status = "Failed"

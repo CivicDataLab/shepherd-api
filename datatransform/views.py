@@ -132,6 +132,18 @@ def pipe_create(request):
         return JsonResponse(context, safe=False)
 
 
+def update_pipeline(request):
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        p_id = post_data.get("pipeline_id", None)
+        pipeline_creator_bg.create_pipeline(p_id, post_data)
+        context = {
+            "p_id": p_id,
+            "Success": True}
+        return JsonResponse(context, safe=False)
+
+
+
 
 def res_transform(request):
     """ Triggers pipeline_creator_bg background task.
