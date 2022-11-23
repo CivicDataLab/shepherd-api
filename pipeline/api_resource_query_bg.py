@@ -121,9 +121,25 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         api_request = requests.get(base_url + url_path, headers=header, params=param, verify=False)
     api_response = api_request.text
     if response_type == "JSON":
-        print("in if...")
+        data = pd.read_json(api_response)
+        temp_file_name = uuid.uuid4().hex + ".json"
+        if p_id is not None:
+            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+            logger.info("INFO: Received API resource with pre-saved pipeline details")
+            json_object = json.dumps(api_response, indent=4)
+            with open(temp_file_name, "w") as outfile:
+                outfile.write(json_object)
+            pipeline_obj = Pipeline.objects.get(pk=p_id)
+            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+            pipeline_obj.save()
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
+            print("^^^^", type(transformed_data))
+            if not isinstance(transformed_data, str):
+                transformed_data = json.dumps(transformed_data)
+        else:
+            transformed_data = data
         with open(file_name + "-data.json", 'w') as f:
-            f.write(api_response)
+            f.write(transformed_data)
         file_path = file_name + "-data.json"
     if response_type == "CSV":
         csv_data = StringIO(api_response)
@@ -137,7 +153,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             pipeline_obj = Pipeline.objects.get(pk=p_id)
             pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
             pipeline_obj.save()
-            transformed_data = task_executor(p_id, temp_file_name, "api_res", "")
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
         else:
             transformed_data = data
         if request_columns == "":

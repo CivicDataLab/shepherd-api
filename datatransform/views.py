@@ -200,6 +200,7 @@ def api_source_query(request):
         request_rows = post_data.get('request_rows', "")
         try:
             pipeline_object = list(Pipeline.objects.filter(resource_identifier=api_source_id))[-1]
+            print("got an obj")
             p_id = getattr(pipeline_object, "pipeline_id")
         except Exception as e:
             print(str(e))
