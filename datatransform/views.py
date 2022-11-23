@@ -34,9 +34,9 @@ def transformer_list(request):
             {"name": "n", "type": "n_type", "desc": "Please enter value of n"}
         ]},
         {"name": "aggregate", "context": [
-            {"name": "index", "type": "field_single", "desc": "Field that is needed as index"},
-            {"name": "columns", "type": "field_multi", "desc": "Select column names"},
-            {"name": "values", "type": "field_multi", "desc": "values"}
+            {"name": "index", "type": "field_multi", "desc": "Fields which need to be grouped"},
+            {"name": "columns", "type": "field_multi", "desc": "Reference fields for aggregation"},
+            {"name": "values", "type": "field_multi", "desc": "Fields for which the aggregated counts to be extracted"}
         ]}
     ]
 
