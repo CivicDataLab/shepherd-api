@@ -2,6 +2,7 @@ import pika
 import requests
 from background_task.models import CompletedTask
 
+import log_utils
 from pipeline.api_resource_query_bg import api_resource_query_task
 import pipeline_creator_bg
 from .models import Task, Pipeline
@@ -163,7 +164,16 @@ def res_transform(request):
         p.save()
 
         p_id = p.pk
-
+        logger = log_utils.set_log_file(p_id, pipeline_name)
+        transformers_list = post_data.get('transformers_list', None)
+        transformers_list = [i for i in transformers_list if i]
+        for _, each in enumerate(transformers_list):
+            task_name = each.get('name', None)
+            task_order_no = each.get('order_no', None)
+            task_context = each.get('context', None)
+            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
+        logger.info(f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
+                    f"{transformers_list}")
         pipeline_creator_bg.create_pipeline(post_data, p_id)
         completed_tasks_qs = CompletedTask.objects.all()
         print(completed_tasks_qs)
