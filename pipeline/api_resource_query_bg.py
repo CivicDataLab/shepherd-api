@@ -79,7 +79,26 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
   }}
 }}
 """
+    data_request_query = f""" 
+        {{
+        data_request(data_request_id: {request_id}) {{
+            id
+            status
+            resource {{
+                id
+                schema_exists
+            }}
+            parameters
+        }}
+    }}
+    """
     headers = {"Authorization": access_token}
+
+    get_datarequest_details = requests.post(graph_ql_url, json={'query': data_request_query},
+                                            headers=headers)
+    datarequest_response = json.loads(get_datarequest_details.text)
+    data_request_parameters = datarequest_response['data']['data_request']['parameters']
+    print(type(data_request_parameters), "????")
     file_name = "api_resource-" + str(uuid.uuid4().hex)[0:5] # name of the file to be uploaded
     request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
     response = json.loads(request.text)
@@ -115,15 +134,32 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             pwd = auth_credentials[1]["value"]
             param = {uname_key: uname, pwd_key:pwd}
     response_type = response['data']['resource']['api_details']['response_type']
+    param.update(json.loads(data_request_parameters))
+    print("final params....$$$$", param)
     try:
         api_request = requests.get(base_url + url_path, headers=header, params=param, verify=True)
     except:
         api_request = requests.get(base_url + url_path, headers=header, params=param, verify=False)
     api_response = api_request.text
     if response_type == "JSON":
-        print("in if...")
+        temp_file_name = uuid.uuid4().hex + ".json"
+        if p_id is not None:
+            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+            logger.info("INFO: Received API resource with pre-saved pipeline details")
+            json_object = json.dumps(api_response, indent=4)
+            with open(temp_file_name, "w") as outfile:
+                outfile.write(json_object)
+            pipeline_obj = Pipeline.objects.get(pk=p_id)
+            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+            pipeline_obj.save()
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
+            print("^^^^", type(transformed_data))
+            if not isinstance(transformed_data, str):
+                transformed_data = json.dumps(transformed_data)
+        else:
+            transformed_data = api_response
         with open(file_name + "-data.json", 'w') as f:
-            f.write(api_response)
+            f.write(transformed_data)
         file_path = file_name + "-data.json"
     if response_type == "CSV":
         csv_data = StringIO(api_response)
@@ -137,13 +173,13 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             pipeline_obj = Pipeline.objects.get(pk=p_id)
             pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
             pipeline_obj.save()
-            transformed_data = task_executor(p_id, temp_file_name, "api_res", "")
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
         else:
             transformed_data = data
         if request_columns == "":
             column_selected_df = transformed_data
         else:
-            column_selected_df = data.loc[:, data.columns.isin(request_columns.split(","))]
+            column_selected_df = data.loc[:, data.columns.isin(request_columns)]
         # if row length is not specified return all rows
         if request_rows == "" or int(request_rows) > len(column_selected_df):
             final_df = column_selected_df
@@ -152,6 +188,10 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             final_df = column_selected_df.iloc[:num_rows_int]
         final_df.to_csv(file_name + "-data.csv")
         file_path = file_name + "-data.csv"
+    if response_type == "XML":
+        with open(file_name + "-data.xml", 'w') as f:
+            f.write(api_response)
+        file_path = file_name + "-data.xml"
     status = "FETCHED"
     files = [
         ('0', (file_path, open(file_path, 'rb'), response_type))

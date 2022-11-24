@@ -46,31 +46,52 @@ def create_pipeline(post_data, pipeline_name):
     except Exception as e:
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
     transformers_list = [i for i in transformers_list if i]
-    try:
-        data = read_data(data_url)
-        p = Pipeline.objects.get(pk=p_id)
-        p.status = "Created"
-        logger.info(f"INFO: Pipeline created")
-        p.resource_identifier = res_id
-        p.save()
-    except Exception as e:
-        data = None
-        p.status = "Failed"
-        p.save()
+    file_format = response['data']['resource']['file_details']['format']
+    if file_format == "CSV":
+        try:
+            data = read_data(data_url)
+            p = Pipeline.objects.get(pk=p_id)
+            p.status = "Created"
+            logger.info(f"INFO: Pipeline created")
+            p.resource_identifier = res_id
+            p.save()
+            temp_file_name = uuid.uuid4().hex
+            if not data.empty:
+                data.to_pickle(temp_file_name)
+        except Exception as e:
+            data = None
+            p.status = "Failed"
+            p.save()
+    elif file_format == "JSON":
+        try:
+            data = read_json_data(data_url)
+            p = Pipeline.objects.get(pk=p_id)
+            p.status = "Created"
+            logger.info(f"INFO: Pipeline created")
+            p.resource_identifier = res_id
+            p.save()
+            temp_file_name = uuid.uuid4().hex + ".json"
+            json_object = json.dumps(data, indent=4)
+            with open(temp_file_name, "w") as outfile:
+                outfile.write(json_object)
+
+        except Exception as e:
+            data = None
+            p.status = "Failed"
+            p.save()
     for _, each in enumerate(transformers_list):
         task_name = each.get('name', None)
         task_order_no = each.get('order_no', None)
         task_context = each.get('context', None)
         p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
 
-    temp_file_name = uuid.uuid4().hex
-    if not data.empty:
-        data.to_pickle(temp_file_name)
+
     message_body = {
         'p_id': p_id,
         'temp_file_name': temp_file_name,
         'res_details': response,
-        'db_action': db_action
+        'db_action': db_action,
+        'file_format': file_format
     }
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host=rabbit_mq_host))
@@ -90,3 +111,7 @@ def read_data(data_url):
     all_data.fillna(value="", inplace=True)
 
     return all_data
+
+def read_json_data(data_url):
+    data_response = requests.get(data_url)
+    return data_response.json()

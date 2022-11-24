@@ -21,7 +21,8 @@ def transformer_list(request):
             {"name": "column1", "type": "field_single", "desc": "Please select first column name"},
             {"name": "column2", "type": "field_single", "desc": "Please select second column name"},
             {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
-            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
+            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"},
+            {"name": "retain_cols", "type": "boolean", "desc": "Whether top retain the merged columns"}
         ]},
         {"name": "change_format", "context": [
             {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
@@ -32,9 +33,9 @@ def transformer_list(request):
             {"name": "n", "type": "n_type", "desc": "Please enter value of n"}
         ]},
         {"name": "aggregate", "context": [
-            {"name": "index", "type": "field_single", "desc": "Field that is needed as index"},
-            {"name": "columns", "type": "field_multi", "desc": "Select column names"},
-            {"name": "values", "type": "field_multi", "desc": "values"}
+            {"name": "index", "type": "field_multi", "desc": "Fields which need to be grouped"},
+            {"name": "columns", "type": "field_multi", "desc": "Reference fields for aggregation"},
+            {"name": "values", "type": "field_multi", "desc": "Fields for which the aggregated counts to be extracted"}
         ]}
     ]
 
@@ -199,6 +200,7 @@ def api_source_query(request):
         request_rows = post_data.get('request_rows', "")
         try:
             pipeline_object = list(Pipeline.objects.filter(resource_identifier=api_source_id))[-1]
+            print("got an obj")
             p_id = getattr(pipeline_object, "pipeline_id")
         except Exception as e:
             print(str(e))

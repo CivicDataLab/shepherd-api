@@ -39,27 +39,33 @@ def skip_column(context, pipeline, task_obj):
 @task
 def merge_columns(context, pipeline, task_obj):
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
+    retain_cols = False
     separator = context['separator']
-
+    try:
+        retain_cols = context['retain_cols']
+    except:
+        pass
     try:
         pipeline.data[output_column] = pipeline.data[column1].astype(str) + separator + pipeline.data[column2] \
             .astype(str)
-        pipeline.data = pipeline.data.drop([column1, column2], axis=1)
+        if not retain_cols:
+            pipeline.data = pipeline.data.drop([column1, column2], axis=1)
 
         """ setting up the schema after task"""
         data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
                                                    convert_integer=True, convert_boolean=True, convert_floating=True)
         names_types_dict = data_schema.dtypes.astype(str).to_dict()
         new_col_format = names_types_dict[output_column]
-        for sc in pipeline.schema:
-            if sc['key'] == column1:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-            if sc['key'] == column2:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
+        if not retain_cols:
+            for sc in pipeline.schema:
+                if sc['key'] == column1:
+                    sc['key'] = ""
+                    sc['format'] = ""
+                    sc['description'] = ""
+                if sc['key'] == column2:
+                    sc['key'] = ""
+                    sc['format'] = ""
+                    sc['description'] = ""
         pipeline.schema.append({
             "key": output_column, "format": new_col_format,
             "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
@@ -187,19 +193,19 @@ def aggregate(context, pipeline, task_obj):
     columns = columns.split(",")
     values = values.split(",")
     try:
-        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values)
+        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values, aggfunc='count')
         inferred_schema = build_table_schema(pipeline.data)
         fields = inferred_schema['fields']
         new_schema = []
         for field in fields:
             key = field['name']
             description = ""
-            format = field['type']
+            format = "integer"
             for sc in pipeline.schema:
                 if sc['key'] == key or sc['key'] == key[0]:
                     description = sc['description']
             if isinstance(key, tuple):
-                key = " ".join(map(str, key))
+                key = "-".join(map(str, key))
             new_schema.append({"key": key, "format": format, "description": description})
         pipeline.schema = new_schema
         pipeline.logger.info(f"INFO: task - aggregate is done.")

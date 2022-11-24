@@ -68,6 +68,7 @@ def create_resource(res_dict):
     file format field in the graphql query there are some if else statements involved here.
     """
     res_details = res_dict['res_details']
+    init_file_format = res_details['data']['resource']['file_details']['format']
     print("%%%%%",res_details)
     dataset_id = res_details['data']['resource']['dataset']['id']
     resource_name = res_details['data']['resource']['title'] + "-" + (str(uuid.uuid4().hex)[0:5])
@@ -106,10 +107,29 @@ def create_resource(res_dict):
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
-    else:
+
+    elif os.path.isfile(file_path + ".csv"):
+        file_path = file_path + ".csv"
+        file_format = "CSV"
+        os.rename(file_path, resource_name + ".csv")
+        file_path = resource_name + ".csv"
+        files = [
+            ('0', (resource_name + ".csv", open(resource_name + ".csv", 'rb'), 'csv'))
+        ]
+
+    elif init_file_format == "CSV":
         data.to_csv(resource_name + ".csv", index=False)
         file_path = resource_name + ".csv"
         file_format = "CSV"
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
+        ]
+    elif init_file_format == "JSON":
+        json_object = json.dumps(data, indent=4)
+        file_path = resource_name + ".json"
+        file_format = "JSON"
+        with open(resource_name + ".json", "w") as outfile:
+            outfile.write(json_object)
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
@@ -130,6 +150,7 @@ def create_resource(res_dict):
 def update_resource(res_dict):
     """ Description of create_resource applies to this method as-well"""
     res_details = res_dict['res_details']
+    init_file_format = res_details['data']['resource']['file_details']['format']
     resource_name = res_details['data']['resource']['title']
     org_id = res_details['data']['resource']['dataset']['catalog']['organization']['id']
     data = res_dict['data']
@@ -165,10 +186,28 @@ def update_resource(res_dict):
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
-    else:
+    elif os.path.isfile(file_path + ".csv"):
+        file_path = file_path + ".csv"
+        file_format = "CSV"
+        os.rename(file_path, resource_name + ".csv")
+        file_path = resource_name + ".csv"
+        files = [
+            ('0', (resource_name + ".csv", open(resource_name + ".csv", 'rb'), 'csv'))
+        ]
+
+    elif init_file_format == "CSV":
         data.to_csv(resource_name + ".csv", index=False)
         file_path = resource_name + ".csv"
         file_format = "CSV"
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
+        ]
+    elif init_file_format == "JSON":
+        json_object = json.dumps(data, indent=4)
+        file_path = resource_name + ".json"
+        file_format = "JSON"
+        with open(resource_name+".json", "w") as outfile:
+            outfile.write(json_object)
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
