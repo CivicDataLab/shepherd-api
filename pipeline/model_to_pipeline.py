@@ -4,23 +4,33 @@ from datatransform.models import Pipeline
 from pipeline import pipeline
 from config import settings
 import pandas as pd
-from tasks import prefect_tasks
+from tasks import prefect_tasks, prefect_json_transformations
 from utils import update_resource, create_resource
 
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
 
-def task_executor(pipeline_id, data_pickle, res_details, db_action):
+def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
+    data = None
     try:
-        data = None
-        try:
-            data = pd.read_pickle(data_pickle)
+        if file_format == "CSV":
+            try:
+                data = pd.read_pickle(data_pickle)
+                os.remove(data_pickle)
+            except:
+                pass
+        elif file_format == "JSON":
+            f = open(data_pickle, "rb")
+            data = json.load(f)
+            f.close()
             os.remove(data_pickle)
-        except:
-            pass
+            if isinstance(data, str):
+                data = json.loads(data)
+
         print(" got pipeline id...", pipeline_id)
+        print("data before,,,%%%", data)
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
         tasks = pipeline_object.task_set.all().order_by("order_no")
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
@@ -30,11 +40,18 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
             new_pipeline.add(task)
 
         [execution_from_model(task) for task in tasks]
-        if res_details == "api_res":
+        if res_details == "api_res" and file_format == "CSV":
             prefect_tasks.pipeline_executor(new_pipeline)
             return new_pipeline.data
+        elif res_details == "api_res" and file_format == "JSON":
+            prefect_json_transformations.json_pipeline_executor(new_pipeline)
+            return new_pipeline.data
         new_pipeline.schema = res_details['data']['resource']['schema']
-        prefect_tasks.pipeline_executor(new_pipeline)
+
+        if file_format == "CSV":
+            prefect_tasks.pipeline_executor(new_pipeline)
+        elif file_format == "JSON":
+            prefect_json_transformations.json_pipeline_executor(new_pipeline)
         if new_pipeline.model.status == "Failed":
             raise Exception("There was an error while running the pipeline")
         if db_action == "update":

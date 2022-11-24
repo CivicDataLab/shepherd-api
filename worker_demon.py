@@ -34,8 +34,9 @@ def main():
         temp_file_name = body_json['temp_file_name']
         res_details = body_json['res_details']
         db_action = body_json['db_action']
+        file_format = body_json['file_format']
         try:
-            task_executor(p_id, temp_file_name, res_details, db_action)
+            task_executor(p_id, temp_file_name, res_details, db_action, file_format)
         except Exception as e:
             print (e)
         logger.info(f"INFO: Worker finished successfully")
