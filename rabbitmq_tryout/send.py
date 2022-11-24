@@ -88,9 +88,9 @@ import pdfkit
 # print(pdata)
 a = False
 # a = "k"
-if not a:
+a = []
+if a == []:
     print("hi")
-
 
 
 

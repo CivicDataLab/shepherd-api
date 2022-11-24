@@ -23,12 +23,10 @@ rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RA
 
 
 @background(queue="create_pipeline")
-def create_pipeline(post_data, pipeline_name):
+def create_pipeline(post_data, p_id):
     """ Asynchronous task to create pipeline using the request received from the API """
-    p = Pipeline(status="Requested", pipeline_name=pipeline_name)
-    p.save()
-
-    p_id = p.pk
+    p = Pipeline.objects.get(pk=p_id)
+    pipeline_name = getattr(p, "pipeline_name")
 
     logger = log_utils.set_log_file(p_id, pipeline_name)
     transformers_list = post_data.get('transformers_list', None)

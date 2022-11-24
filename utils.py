@@ -79,7 +79,7 @@ def create_resource(res_dict):
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
         '"description":', 'description:')
     res_name_for_file = res_dict['resource_name']
-    description = "Result of the execution of pipeline named - " + res_name_for_file
+    description = res_details['data']['resource']['description']
     logger = res_dict['logger']
     dir = "format_changed_files/"
     file_path = dir + res_name_for_file

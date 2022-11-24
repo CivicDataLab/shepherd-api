@@ -162,6 +162,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             f.write(transformed_data)
         file_path = file_name + "-data.json"
     if response_type == "CSV":
+        print(api_response)
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
         temp_file_name = uuid.uuid4().hex
@@ -229,5 +230,5 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         print(e)
     finally:
         files[0][1][1].close()
-        os.remove(file_path)
+        # os.remove(file_path)
 

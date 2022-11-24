@@ -158,7 +158,11 @@ def res_transform(request):
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)
-        pipeline_creator_bg.create_pipeline(post_data, pipeline_name)
+        p = Pipeline(status="Requested", pipeline_name=pipeline_name)
+        p.save()
+
+        p_id = p.pk
+        pipeline_creator_bg.create_pipeline(post_data, p_id)
         completed_tasks_qs = CompletedTask.objects.all()
         print(completed_tasks_qs)
         context = {"result": pipeline_name, "Success": True}
