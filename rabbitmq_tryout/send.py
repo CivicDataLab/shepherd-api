@@ -65,28 +65,31 @@ import json
 import pandas as pd
 import pdfkit
 
-
-def remove_a_key(d, remove_key):
-    for key in list(d.keys()):
-        if key in remove_key:
-            del d[key]
-        else:
-            skip_col(d[key], remove_key)
-
-
-def skip_col(d, remove_key):
-    if isinstance(d, dict):
-        remove_a_key(d, remove_key)
-    if isinstance(d, list):
-        for each in d:
-            if isinstance(each, dict):
-                remove_a_key(each, remove_key)
-    return d
-
-data = pd.read_json('data.json')
-pdata = skip_col(data, "gender")
-print(pdata)
-
+#
+# def remove_a_key(d, remove_key):
+#     for key in list(d.keys()):
+#         if key in remove_key:
+#             del d[key]
+#         else:
+#             skip_col(d[key], remove_key)
+#
+#
+# def skip_col(d, remove_key):
+#     if isinstance(d, dict):
+#         remove_a_key(d, remove_key)
+#     if isinstance(d, list):
+#         for each in d:
+#             if isinstance(each, dict):
+#                 remove_a_key(each, remove_key)
+#     return d
+#
+# data = pd.read_json('data.json')
+# pdata = skip_col(data, "gender")
+# print(pdata)
+a = False
+# a = "k"
+if not a:
+    print("hi")
 
 
 

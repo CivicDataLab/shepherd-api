@@ -117,7 +117,11 @@ def anonymize(context, pipeline, task_obj):
 @task(name="json_merge_columns")
 def merge_columns(context, pipeline, task_obj):
     column1, column2, output_column = context['column1'], context['column2'], context['output_column']
-    retain_cols = context['retain_cols']
+    retain_cols = False
+    try:
+        retain_cols = context['retain_cols']
+    except:
+        pass
     separator = context['separator']
     columns_list = [column1, column2]
     try:
@@ -148,7 +152,7 @@ def merge_columns(context, pipeline, task_obj):
         merge_col(pipeline.data, columns_list, result)
         if isinstance(pipeline.data, dict) and not pipeline.merge_flag:
             pipeline.data[output_column] = result
-        if retain_cols == "false":
+        if not retain_cols:
             for sc in pipeline.schema:
                 if sc['key'] == column1:
                     sc['key'] = ""
