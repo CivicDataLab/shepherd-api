@@ -186,6 +186,15 @@ def update_resource(res_dict):
         files = [
             ('0', (resource_name + ".pdf", open(resource_name + ".pdf", 'rb'), 'pdf'))
         ]
+    elif os.path.isfile(file_path + ".csv"):
+        file_path = file_path + ".csv"
+        file_format = "CSV"
+        os.rename(file_path, resource_name + ".csv")
+        file_path = resource_name + ".csv"
+        files = [
+            ('0', (resource_name + ".csv", open(resource_name + ".csv", 'rb'), 'csv'))
+        ]
+
     elif init_file_format == "CSV":
         data.to_csv(resource_name + ".csv", index=False)
         file_path = resource_name + ".csv"

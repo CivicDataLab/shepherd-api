@@ -143,6 +143,8 @@ def merge_columns(context, pipeline, task_obj):
                         for key in list(each.keys()):
                             if key in cols_list:
                                 val_list.append(str(each[key]))
+                                if not retain_cols:
+                                    del each[key]
                                 if len(val_list) == 2:
                                     result_str = str(separator).join(val_list)
                                     each[output_column] = result_str
