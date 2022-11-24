@@ -79,8 +79,12 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
                  "logger": new_pipeline.logger}
             )
+            new_pipeline.model.resultant_res_id = id
+            new_pipeline.model.save()
             print("res_id created at...", id)
         return
 
     except Exception as e:
+        new_pipeline.model.err_msg = str(e)
+        pipeline.model.save()
         raise e

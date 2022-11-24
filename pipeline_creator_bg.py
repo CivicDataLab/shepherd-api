@@ -41,7 +41,8 @@ def create_pipeline(post_data, p_id):
         print(response)
     except Exception as e:
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
-
+        p.err_msg = str(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
+        p.save()
     file_format = response['data']['resource']['file_details']['format']
     if file_format == "CSV":
         try:
@@ -57,6 +58,7 @@ def create_pipeline(post_data, p_id):
         except Exception as e:
             data = None
             p.status = "Failed"
+            p.err_msg = str(e)
             p.save()
     elif file_format == "JSON":
         try:
@@ -74,6 +76,7 @@ def create_pipeline(post_data, p_id):
         except Exception as e:
             data = None
             p.status = "Failed"
+            p.err_msg = str(e)
             p.save()
 
 

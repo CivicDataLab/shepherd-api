@@ -31,6 +31,9 @@ def skip_column(context, pipeline, task_obj):
         send_error_to_prefect_cloud(e)
         pipeline.logger.error(f"ERROR: skip_column failed with an error - {str(e)}. Setting "
                              f"pipeline status to failed")
+        pipeline.model.err_msg = (f"ERROR: skip_column failed with an error - {str(e)}. Setting "
+                             f"pipeline status to failed")
+        pipeline.model.save()
         task_obj.status = "Failed"
 
         task_obj.save()
@@ -76,6 +79,9 @@ def merge_columns(context, pipeline, task_obj):
     except Exception as e:
         pipeline.logger.error(f"ERROR: merge_columns failed with an error - {str(e)}. Setting "
                               f"pipeline status to failed")
+        pipeline.model.err_msg = (f"ERROR: merge_columns failed with an error - {str(e)}. Setting "
+                              f"pipeline status to failed")
+        pipeline.model.save()
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
@@ -131,6 +137,9 @@ def anonymize(context, pipeline, task_obj):
     except Exception as e:
         pipeline.logger.error(f"ERROR: task - anonymize failed with an error - {str(e)}. Setting "
                               f"pipeline status to failed")
+        pipeline.model.err_msg = (f"ERROR: task - anonymize failed with an error - {str(e)}. Setting "
+                              f"pipeline status to failed")
+        pipeline.model.save()
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
@@ -153,6 +162,9 @@ def change_format(context, pipeline, task_obj):
         except Exception as e:
             pipeline.logger.error(f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
                                   f"pipeline status to failed")
+            pipeline.model.err_msg = (f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
+                                  f"pipeline status to failed")
+            pipeline.model.save()
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
@@ -166,6 +178,9 @@ def change_format(context, pipeline, task_obj):
         except Exception as e:
             pipeline.logger.error(f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
                                   f"pipeline status to failed")
+            pipeline.model.err_msg = (f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
+                                  f"pipeline status to failed")
+            pipeline.model.save()
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
@@ -179,6 +194,9 @@ def change_format(context, pipeline, task_obj):
         except Exception as e:
             pipeline.logger.error(f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
                                   f"pipeline status to failed")
+            pipeline.model.err_msg = (f"ERROR: task - change_format failed with an error - {str(e)}. Setting "
+                                  f"pipeline status to failed")
+            pipeline.model.save()
             send_error_to_prefect_cloud(e)
             task_obj.status = "Failed"
             task_obj.save()
@@ -213,6 +231,9 @@ def aggregate(context, pipeline, task_obj):
     except Exception as e:
         pipeline.logger.error(f"ERROR: task - aggregate failed with an error - {str(e)}. Setting "
                               f"pipeline status to failed")
+        pipeline.model.err_msg = (f"ERROR: task - aggregate failed with an error - {str(e)}. Setting "
+                              f"pipeline status to failed")
+        pipeline.model.save()
         send_error_to_prefect_cloud(e)
         task_obj.status = "Failed"
         task_obj.save()
@@ -256,6 +277,8 @@ def pipeline_executor(pipeline):
         for i in range(len(func_names)):
             globals()[func_names[i]](contexts[i], pipeline, tasks_objects[i])
     except Exception as e:
+        pipeline.model.err_msg = str(e)
+        pipeline.model.save()
         raise e
     # if any of the tasks is failed, set pipeline status as - Failed
     for each_task in tasks_objects:
