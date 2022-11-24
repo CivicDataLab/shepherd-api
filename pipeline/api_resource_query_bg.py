@@ -141,6 +141,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     except:
         api_request = requests.get(base_url + url_path, headers=header, params=param, verify=False)
     api_response = api_request.text
+    format_changed_file = "" # holds the  filename if change_format transformation is applied
     if response_type == "JSON":
         temp_file_name = uuid.uuid4().hex + ".json"
         if p_id is not None:
@@ -156,11 +157,26 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             print("^^^^", type(transformed_data))
             if not isinstance(transformed_data, str):
                 transformed_data = json.dumps(transformed_data)
+            transformed_file_dir = "format_changed_files/"
+            format_changed_file = transformed_file_dir + str(getattr(pipeline_obj, "pipeline_name"))
         else:
             transformed_data = api_response
-        with open(file_name + "-data.json", 'w') as f:
-            f.write(transformed_data)
-        file_path = file_name + "-data.json"
+        if os.path.isfile(format_changed_file+".csv"):
+            file_path = format_changed_file + ".csv"
+            os.rename(file_path, transformed_file_dir + file_name + ".csv")
+            file_path = transformed_file_dir + file_name + ".csv"
+        elif os.path.isfile(format_changed_file+".xml"):
+            file_path = format_changed_file + ".xml"
+            os.rename(file_path, transformed_file_dir + file_name + ".xml")
+            file_path = transformed_file_dir + file_name + ".xml"
+        elif os.path.isfile(format_changed_file + ".pdf"):
+            file_path = format_changed_file + ".pdf"
+            os.rename(file_path, transformed_file_dir + file_name + ".pdf")
+            file_path = transformed_file_dir + file_name + ".pdf"
+        else:
+            with open(file_name + "-data.json", 'w') as f:
+                f.write(transformed_data)
+            file_path = file_name + "-data.json"
     if response_type == "CSV":
         print(api_response)
         csv_data = StringIO(api_response)
@@ -175,6 +191,9 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
             pipeline_obj.save()
             transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
+            transformed_file_dir = "format_changed_files/"
+            format_changed_file = transformed_file_dir+str(getattr(pipeline_obj, "pipeline_name"))
+            print("actual name-----", format_changed_file+".xml")
         else:
             transformed_data = data
         if request_columns == []:
@@ -187,8 +206,22 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         else:
             num_rows_int = int(request_rows)
             final_df = column_selected_df.iloc[:num_rows_int]
-        final_df.to_csv(file_name + "-data.csv")
-        file_path = file_name + "-data.csv"
+        # if a transformation was to change format, send that file in mutation
+        if os.path.isfile(format_changed_file+".xml"):
+            file_path = format_changed_file+".xml"
+            os.rename(file_path, transformed_file_dir+file_name + ".xml")
+            file_path = transformed_file_dir+file_name + ".xml"
+        elif os.path.isfile(format_changed_file+".json"):
+            file_path = format_changed_file + ".json"
+            os.rename(file_path, transformed_file_dir + file_name + ".json")
+            file_path = transformed_file_dir + file_name + ".json"
+        elif os.path.isfile(format_changed_file + ".pdf"):
+            file_path = format_changed_file + ".pdf"
+            os.rename(file_path, transformed_file_dir + file_name + ".pdf")
+            file_path = transformed_file_dir + file_name + ".pdf"
+        else:
+            final_df.to_csv(file_name + "-data.csv")
+            file_path = file_name + "-data.csv"
     if response_type == "XML":
         with open(file_name + "-data.xml", 'w') as f:
             f.write(api_response)
@@ -197,6 +230,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     files = [
         ('0', (file_path, open(file_path, 'rb'), response_type))
     ]
+    print("uploading....&&&&", files)
     variables = {"file": None}
 
     map = json.dumps({"0": ["variables.file"]})
@@ -230,5 +264,5 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         print(e)
     finally:
         files[0][1][1].close()
-        # os.remove(file_path)
+        os.remove(file_path)
 
