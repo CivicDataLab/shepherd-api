@@ -176,7 +176,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
         else:
             transformed_data = data
-        if request_columns == "":
+        if request_columns == []:
             column_selected_df = transformed_data
         else:
             column_selected_df = data.loc[:, data.columns.isin(request_columns)]
