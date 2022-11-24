@@ -23,29 +23,25 @@ rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RA
 
 
 @background(queue="create_pipeline")
-def create_pipeline(post_data, pipeline_name):
+def create_pipeline(post_data, p_id):
     """ Asynchronous task to create pipeline using the request received from the API """
-    p = Pipeline(status="Requested", pipeline_name=pipeline_name)
-    p.save()
+    p = Pipeline.objects.get(pk=p_id)
+    pipeline_name = getattr(p, "pipeline_name")
 
-    p_id = p.pk
+    logger = log_utils.get_logger_for_existing_file(p_id)
 
-    logger = log_utils.set_log_file(p_id, pipeline_name)
-    transformers_list = post_data.get('transformers_list', None)
     res_id = post_data.get('res_id', None)
     dataset_id = post_data.get('dataset_id', None)
     p.dataset_id = dataset_id
     p.save()
     db_action = post_data.get('db_action', None)
-    logger.info(f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
-                f"{transformers_list}")
     data_url = data_download_url + str(res_id)
     try:
         response = graphql_service.resource_query(res_id)
         print(response)
     except Exception as e:
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
-    transformers_list = [i for i in transformers_list if i]
+
     file_format = response['data']['resource']['file_details']['format']
     if file_format == "CSV":
         try:
@@ -79,11 +75,6 @@ def create_pipeline(post_data, pipeline_name):
             data = None
             p.status = "Failed"
             p.save()
-    for _, each in enumerate(transformers_list):
-        task_name = each.get('name', None)
-        task_order_no = each.get('order_no', None)
-        task_context = each.get('context', None)
-        p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
 
 
     message_body = {

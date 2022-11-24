@@ -2,6 +2,7 @@ import pika
 import requests
 from background_task.models import CompletedTask
 
+import log_utils
 from pipeline.api_resource_query_bg import api_resource_query_task
 import pipeline_creator_bg
 from .models import Task, Pipeline
@@ -59,7 +60,7 @@ def pipeline_filter(request):
             }
             tasks_list.append(t_data)
         data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
-                'output_id': each.output_id, 'created_at': each.created_at,
+                'output_id': each.output_id, 'created_at': each.created_at, 'db_action':each.db_action,
                 'status': each.status, 'resource_id': each.resource_identifier, 'tasks': tasks_list
                 }
         resp_list.append(data)
@@ -158,7 +159,24 @@ def res_transform(request):
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)
-        pipeline_creator_bg.create_pipeline(post_data, pipeline_name)
+        dataset_id = post_data.get('dataset_id', None)
+        db_action = post_data.get('db_action', None)
+        p = Pipeline(status="Requested", pipeline_name=pipeline_name, dataset_id=dataset_id,
+                     db_action=db_action)
+        p.save()
+
+        p_id = p.pk
+        logger = log_utils.set_log_file(p_id, pipeline_name)
+        transformers_list = post_data.get('transformers_list', None)
+        transformers_list = [i for i in transformers_list if i]
+        for _, each in enumerate(transformers_list):
+            task_name = each.get('name', None)
+            task_order_no = each.get('order_no', None)
+            task_context = each.get('context', None)
+            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
+        logger.info(f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
+                    f"{transformers_list}")
+        pipeline_creator_bg.create_pipeline(post_data, p_id)
         completed_tasks_qs = CompletedTask.objects.all()
         print(completed_tasks_qs)
         context = {"result": pipeline_name, "Success": True}
