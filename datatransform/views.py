@@ -158,10 +158,12 @@ def res_transform(request):
     if request.method == 'POST':
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)
-        p = Pipeline(status="Requested", pipeline_name=pipeline_name)
+        dataset_id = post_data.get('dataset_id', None)
+        p = Pipeline(status="Requested", pipeline_name=pipeline_name, dataset_id=dataset_id)
         p.save()
 
         p_id = p.pk
+
         pipeline_creator_bg.create_pipeline(post_data, p_id)
         completed_tasks_qs = CompletedTask.objects.all()
         print(completed_tasks_qs)
