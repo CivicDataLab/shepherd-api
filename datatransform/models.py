@@ -13,6 +13,8 @@ class Pipeline(models.Model):
     dataset_id     = models.CharField(max_length=50)
     resource_identifier    = models.CharField(max_length=50, null=True)
     db_action = models.CharField(max_length=50, null=True)
+    err_msg = models.CharField(max_length=200, null=True)
+    resultant_res_id = models.CharField(max_length=20, null=True)
     # tasks = list()
 
 class Task(models.Model):

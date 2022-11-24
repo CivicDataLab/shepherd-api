@@ -61,7 +61,9 @@ def pipeline_filter(request):
             tasks_list.append(t_data)
         data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
                 'output_id': each.output_id, 'created_at': each.created_at, 'db_action':each.db_action,
-                'status': each.status, 'resource_id': each.resource_identifier, 'tasks': tasks_list
+                'status': each.status, 'resource_id': each.resource_identifier,
+                'resultant_res_id':each.resultant_res_id, 'error_message': each.err_msg,
+                'tasks': tasks_list
                 }
         resp_list.append(data)
 
