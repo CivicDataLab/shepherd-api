@@ -60,7 +60,7 @@ def pipeline_filter(request):
             }
             tasks_list.append(t_data)
         data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
-                'output_id': each.output_id, 'created_at': each.created_at,
+                'output_id': each.output_id, 'created_at': each.created_at, 'db_action':each.db_action,
                 'status': each.status, 'resource_id': each.resource_identifier, 'tasks': tasks_list
                 }
         resp_list.append(data)
@@ -160,7 +160,9 @@ def res_transform(request):
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)
         dataset_id = post_data.get('dataset_id', None)
-        p = Pipeline(status="Requested", pipeline_name=pipeline_name, dataset_id=dataset_id)
+        db_action = post_data.get('db_action', None)
+        p = Pipeline(status="Requested", pipeline_name=pipeline_name, dataset_id=dataset_id,
+                     db_action=db_action)
         p.save()
 
         p_id = p.pk
