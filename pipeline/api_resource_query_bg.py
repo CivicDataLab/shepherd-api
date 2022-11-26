@@ -23,7 +23,7 @@ graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_
 @background(queue="api_res_operation")
 @get_sys_token
 def api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows, access_token=None):
-    print(api_source_id)
+    print('2', api_source_id)
     print(request_id)
     query = f"""{{
   resource(resource_id: {api_source_id}) {{
@@ -70,11 +70,13 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
           auth_type
           auth_credentials
           auth_token
+          auth_token_key
           headers
         }}
       auth_required
       url_path
       response_type
+      request_type
     }}
   }}
 }}
@@ -108,38 +110,54 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     # # headers = response['data']['api_source']['headers']
     auth_loc = response['data']['resource']['api_details']['api_source']['auth_loc'] #- header/param?
     auth_type = response['data']['resource']['api_details']['api_source']['auth_type']  #if token/uname-pwd
+
+    request_type = response["data"]["resource"]["api_details"][
+        "request_type"
+    ]
+
     param = {}
     header = {}
+    if auth_type == "TOKEN":
+        auth_token = response["data"]["resource"]["api_details"]["api_source"]["auth_token"]
+        auth_token_key = response["data"]["resource"]["api_details"]["api_source"]["auth_token_key"]
+    if auth_type == "CREDENTIAL":
+        auth_credentials = response["data"]["resource"]["api_details"]["api_source"]["auth_credentials"]  # - uname pwd
+        uname_key = auth_credentials[0]["key"]
+        uname = auth_credentials[0]["value"]
+        pwd_key = auth_credentials[1]["key"]
+        pwd = auth_credentials[1]["value"]
+
     if auth_loc == "HEADER":
         if auth_type == "TOKEN":
-            auth_token = response['data']['resource']['api_details']['api_source']['auth_token']
-            header = {"access_token":auth_token}
+            header = {auth_token_key: auth_token}
         elif auth_type == "CREDENTIAL":
-            # [{key:username,value:dc, description:desc},{key:password,value:pass, description:desc}]
-            auth_credentials = response['data']['resource']['api_details']['api_source']['auth_credentials']  # - uname pwd
-            uname_key = auth_credentials[0]['key']
-            uname = auth_credentials[0]["value"]
-            pwd_key = auth_credentials[1]['key']
-            pwd = auth_credentials[1]["value"]
             header = {uname_key: uname, pwd_key: pwd}
     if auth_loc == "PARAM":
         if auth_type == "TOKEN":
-            auth_token = response['data']['resource']['api_details']['api_source']['auth_token']
-            param = {"access_token":auth_token}
+            param = {auth_token_key: auth_token}
         elif auth_type == "CREDENTIAL":
-            auth_credentials = response['data']['resource']['api_details']['api_source']['auth_credentials'] #- uname pwd
-            uname_key = auth_credentials[0]['key']
-            uname = auth_credentials[0]["value"]
-            pwd_key = auth_credentials[1]['key']
-            pwd = auth_credentials[1]["value"]
-            param = {uname_key: uname, pwd_key:pwd}
-    response_type = response['data']['resource']['api_details']['response_type']
+            param = {uname_key: uname, pwd_key: pwd}
+
+    response_type = response["data"]["resource"]["api_details"]["response_type"]
     param.update(json.loads(data_request_parameters))
-    print("final params....$$$$", param)
-    try:
-        api_request = requests.get(base_url + url_path, headers=header, params=param, verify=True)
-    except:
-        api_request = requests.get(base_url + url_path, headers=header, params=param, verify=False)
+    print("final params.........................................$$$$", request_type, param, headers, base_url, url_path)
+    if request_type == "GET":
+        try:
+            api_request = requests.get(
+                base_url + url_path, headers=header, params=param, verify=True
+            )
+        except:
+            api_request = requests.get(
+                base_url + url_path, headers=header, params=param, verify=False
+            )
+    elif request_type == "POST":
+        api_request = requests.post(
+            base_url + url_path, headers=header, params=param, body={}, verify=False
+        )
+    elif request_type == "PUT":
+        api_request = requests.put(
+            base_url + url_path, headers=header, params=param, verify=False
+        )
     api_response = api_request.text
     format_changed_file = "" # holds the  filename if change_format transformation is applied
     if response_type == "JSON":

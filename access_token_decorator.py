@@ -12,7 +12,7 @@ auth_url =  os.environ.get('AUTH_URL', config.get("datapipeline", "AUTH_URL"))
 
 def get_sys_token(func):
     def inner(*args, **kwargs):
-        print("getting system token")
+        print('----', "getting system token")
 
         headers = {}
         response = requests.get(auth_url, headers=headers)

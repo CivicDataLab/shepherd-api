@@ -218,14 +218,19 @@ def api_source_query(request):
         request_id = post_data.get('request_id', None)
         request_columns = post_data.get('request_columns', "")
         request_rows = post_data.get('request_rows', "")
+        print ('0', post_data)
         try:
+          
             pipeline_object = list(Pipeline.objects.filter(resource_identifier=api_source_id))[-1]
             print("got an obj")
             p_id = getattr(pipeline_object, "pipeline_id")
         except Exception as e:
             print(str(e))
+            print ('3---')
             p_id = None
+        print('abcd;')
         api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows)
+        print('def')
 
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
