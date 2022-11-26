@@ -24,7 +24,7 @@ graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_
 @get_sys_token
 def api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows, access_token=None):
     print('2', api_source_id)
-    print(request_id)
+    request_id = str(request_id)
     query = f"""{{
   resource(resource_id: {api_source_id}) {{
     id
@@ -80,10 +80,10 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     }}
   }}
 }}
-"""
+""" 
     data_request_query = f""" 
         {{
-        data_request(data_request_id: {request_id}) {{
+        data_request(data_request_id: "{request_id}") {{
             id
             status
             resource {{
