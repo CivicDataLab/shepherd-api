@@ -20,7 +20,7 @@ config.read("config.ini")
 
 graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_QL_URL"))
 
-@background(queue="api_res_operation")
+#@background(queue="api_res_operation")
 @get_sys_token
 def api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows, access_token=None):
     print('2', api_source_id)
@@ -161,63 +161,67 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     api_response = api_request.text
     format_changed_file = "" # holds the  filename if change_format transformation is applied
     if response_type == "JSON":
-        temp_file_name = uuid.uuid4().hex + ".json"
-        if p_id is not None:
-            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
-            logger.info("INFO: Received API resource with pre-saved pipeline details")
-            json_object = json.dumps(api_response, indent=4)
-            with open(temp_file_name, "w") as outfile:
-                outfile.write(json_object)
-            pipeline_obj = Pipeline.objects.get(pk=p_id)
-            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
-            pipeline_obj.save()
-            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
-            print("^^^^", type(transformed_data))
-            if not isinstance(transformed_data, str):
-                transformed_data = json.dumps(transformed_data)
-            transformed_file_dir = "format_changed_files/"
-            format_changed_file = transformed_file_dir + str(getattr(pipeline_obj, "pipeline_name"))
-        else:
-            transformed_data = api_response
-        if os.path.isfile(format_changed_file+".csv"):
-            file_path = format_changed_file + ".csv"
-            os.rename(file_path, transformed_file_dir + file_name + ".csv")
-            file_path = transformed_file_dir + file_name + ".csv"
-        elif os.path.isfile(format_changed_file+".xml"):
-            file_path = format_changed_file + ".xml"
-            os.rename(file_path, transformed_file_dir + file_name + ".xml")
-            file_path = transformed_file_dir + file_name + ".xml"
-        elif os.path.isfile(format_changed_file + ".pdf"):
-            file_path = format_changed_file + ".pdf"
-            os.rename(file_path, transformed_file_dir + file_name + ".pdf")
-            file_path = transformed_file_dir + file_name + ".pdf"
-        else:
-            with open(file_name + "-data.json", 'w') as f:
-                f.write(transformed_data)
+        # temp_file_name = uuid.uuid4().hex + ".json"
+        # if p_id is not None:
+        #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+        #     logger.info("INFO: Received API resource with pre-saved pipeline details")
+        #     json_object = json.dumps(api_response, indent=4)
+        #     with open(temp_file_name, "w") as outfile:
+        #         outfile.write(json_object)
+        #     pipeline_obj = Pipeline.objects.get(pk=p_id)
+        #     pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+        #     pipeline_obj.save()
+        #     transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
+        #     print("^^^^", type(transformed_data))
+        #     if not isinstance(transformed_data, str):
+        #         transformed_data = json.dumps(transformed_data)
+        #     transformed_file_dir = "format_changed_files/"
+        #     format_changed_file = transformed_file_dir + str(getattr(pipeline_obj, "pipeline_name"))
+        # else:
+        #     transformed_data = api_response
+        # if os.path.isfile(format_changed_file+".csv"):
+        #     file_path = format_changed_file + ".csv"
+        #     os.rename(file_path, transformed_file_dir + file_name + ".csv")
+        #     file_path = transformed_file_dir + file_name + ".csv"
+        # elif os.path.isfile(format_changed_file+".xml"):
+        #     file_path = format_changed_file + ".xml"
+        #     os.rename(file_path, transformed_file_dir + file_name + ".xml")
+        #     file_path = transformed_file_dir + file_name + ".xml"
+        # elif os.path.isfile(format_changed_file + ".pdf"):
+        #     file_path = format_changed_file + ".pdf"
+        #     os.rename(file_path, transformed_file_dir + file_name + ".pdf")
+        #     file_path = transformed_file_dir + file_name + ".pdf"
+        # else:
+        #     with open(file_name + "-data.json", 'w') as f:
+        #         f.write(transformed_data)
+        #     file_path = file_name + "-data.json"
+        with open(file_name + "-data.json", 'w') as f:
+            f.write(api_response)
             file_path = file_name + "-data.json"
     if response_type == "CSV":
         print(api_response)
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
-        temp_file_name = uuid.uuid4().hex
-        if p_id is not None:
-            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
-            logger.info("INFO: Received API resource with pre-saved pipeline details")
-            if not data.empty:
-                data.to_pickle(temp_file_name)
-            pipeline_obj = Pipeline.objects.get(pk=p_id)
-            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
-            pipeline_obj.save()
-            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
-            transformed_file_dir = "format_changed_files/"
-            format_changed_file = transformed_file_dir+str(getattr(pipeline_obj, "pipeline_name"))
-            print("actual name-----", format_changed_file+".xml")
-        else:
-            transformed_data = data
+        # temp_file_name = uuid.uuid4().hex
+        # if p_id is not None:
+        #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+        #     logger.info("INFO: Received API resource with pre-saved pipeline details")
+        #     if not data.empty:
+        #         data.to_pickle(temp_file_name)
+        #     pipeline_obj = Pipeline.objects.get(pk=p_id)
+        #     pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+        #     pipeline_obj.save()
+        #     transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
+        #     transformed_file_dir = "format_changed_files/"
+        #     format_changed_file = transformed_file_dir+str(getattr(pipeline_obj, "pipeline_name"))
+        #     print("actual name-----", format_changed_file+".xml")
+        # else:
+        #     transformed_data = data
+        transformed_data = data
         if request_columns == []:
             column_selected_df = transformed_data
         else:
-            column_selected_df = data.loc[:, data.columns.isin(request_columns)]
+            column_selected_df = transformed_data.loc[:, transformed_data.columns.isin(request_columns)]
         # if row length is not specified return all rows
         if request_rows == "" or int(request_rows) > len(column_selected_df):
             final_df = column_selected_df
@@ -225,21 +229,23 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             num_rows_int = int(request_rows)
             final_df = column_selected_df.iloc[:num_rows_int]
         # if a transformation was to change format, send that file in mutation
-        if os.path.isfile(format_changed_file+".xml"):
-            file_path = format_changed_file+".xml"
-            os.rename(file_path, transformed_file_dir+file_name + ".xml")
-            file_path = transformed_file_dir+file_name + ".xml"
-        elif os.path.isfile(format_changed_file+".json"):
-            file_path = format_changed_file + ".json"
-            os.rename(file_path, transformed_file_dir + file_name + ".json")
-            file_path = transformed_file_dir + file_name + ".json"
-        elif os.path.isfile(format_changed_file + ".pdf"):
-            file_path = format_changed_file + ".pdf"
-            os.rename(file_path, transformed_file_dir + file_name + ".pdf")
-            file_path = transformed_file_dir + file_name + ".pdf"
-        else:
-            final_df.to_csv(file_name + "-data.csv")
-            file_path = file_name + "-data.csv"
+        # if os.path.isfile(format_changed_file+".xml"):
+        #     file_path = format_changed_file+".xml"
+        #     os.rename(file_path, transformed_file_dir+file_name + ".xml")
+        #     file_path = transformed_file_dir+file_name + ".xml"
+        # elif os.path.isfile(format_changed_file+".json"):
+        #     file_path = format_changed_file + ".json"
+        #     os.rename(file_path, transformed_file_dir + file_name + ".json")
+        #     file_path = transformed_file_dir + file_name + ".json"
+        # elif os.path.isfile(format_changed_file + ".pdf"):
+        #     file_path = format_changed_file + ".pdf"
+        #     os.rename(file_path, transformed_file_dir + file_name + ".pdf")
+        #     file_path = transformed_file_dir + file_name + ".pdf"
+        # else:
+        #     final_df.to_csv(file_name + "-data.csv")
+        #     file_path = file_name + "-data.csv"
+        final_df.to_csv(file_name + "-data.csv")
+        file_path = file_name + "-data.csv"
     if response_type == "XML":
         with open(file_name + "-data.xml", 'w') as f:
             f.write(api_response)
