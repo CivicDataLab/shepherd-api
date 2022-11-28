@@ -201,7 +201,8 @@ def api_resource_query_task(
         ""  # holds the  filename if change_format transformation is applied
     )
     response_type = target_format if target_format != "" else response_type
-    if response_type == "JSON":
+    print('-----resp', response_type)
+    if response_type == "json":
         # temp_file_name = uuid.uuid4().hex + ".json"
         # if p_id is not None:
         #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
@@ -239,7 +240,7 @@ def api_resource_query_task(
         with open(file_name + "-data.json", "w") as f:
             f.write(api_response)
             file_path = file_name + "-data.json"
-    if response_type == "CSV":
+    if response_type == "csv":
         print(api_response)
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
@@ -289,7 +290,7 @@ def api_resource_query_task(
         #     file_path = file_name + "-data.csv"
         final_df.to_csv(file_name + "-data.csv")
         file_path = file_name + "-data.csv"
-    if response_type == "XML":
+    if response_type == "xml":
         with open(file_name + "-data.xml", "w") as f:
             f.write(api_response)
         file_path = file_name + "-data.xml"
