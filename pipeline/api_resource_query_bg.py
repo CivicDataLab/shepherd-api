@@ -18,12 +18,22 @@ config = ConfigParser()
 
 config.read("config.ini")
 
-graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_QL_URL"))
+graph_ql_url = os.environ.get(
+    "GRAPH_QL_URL", config.get("datapipeline", "GRAPH_QL_URL")
+)
 
-#@background(queue="api_res_operation")
+# @background(queue="api_res_operation")
 @get_sys_token
-def api_resource_query_task(p_id, api_source_id, request_id, request_columns, request_rows, access_token=None):
-    print('2', api_source_id)
+def api_resource_query_task(
+    p_id,
+    api_source_id,
+    request_id,
+    request_columns,
+    request_rows,
+    target_format,
+    access_token=None,
+):
+    print("2", api_source_id)
     request_id = str(request_id)
     query = f"""{{
   resource(resource_id: {api_source_id}) {{
@@ -77,10 +87,12 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
       url_path
       response_type
       request_type
+      format_loc
+      format_key
     }}
   }}
 }}
-""" 
+"""
     data_request_query = f""" 
         {{
         data_request(data_request_id: "{request_id}") {{
@@ -96,32 +108,45 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
     """
     headers = {"Authorization": access_token}
 
-    get_datarequest_details = requests.post(graph_ql_url, json={'query': data_request_query},
-                                            headers=headers)
+    get_datarequest_details = requests.post(
+        graph_ql_url, json={"query": data_request_query}, headers=headers
+    )
     datarequest_response = json.loads(get_datarequest_details.text)
-    data_request_parameters = datarequest_response['data']['data_request']['parameters']
+    data_request_parameters = datarequest_response["data"]["data_request"]["parameters"]
     print(type(data_request_parameters), "????")
-    file_name = "api_resource-" + str(uuid.uuid4().hex)[0:5] # name of the file to be uploaded
-    request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
+    file_name = (
+        "api_resource-" + str(uuid.uuid4().hex)[0:5]
+    )  # name of the file to be uploaded
+    request = requests.post(graph_ql_url, json={"query": query}, headers=headers)
     response = json.loads(request.text)
     print(response)
-    base_url = response['data']['resource']['api_details']['api_source']['base_url']
-    url_path = response['data']['resource']['api_details']['url_path']
+    base_url = response["data"]["resource"]["api_details"]["api_source"]["base_url"]
+    url_path = response["data"]["resource"]["api_details"]["url_path"]
     # # headers = response['data']['api_source']['headers']
-    auth_loc = response['data']['resource']['api_details']['api_source']['auth_loc'] #- header/param?
-    auth_type = response['data']['resource']['api_details']['api_source']['auth_type']  #if token/uname-pwd
+    auth_loc = response["data"]["resource"]["api_details"]["api_source"][
+        "auth_loc"
+    ]  # - header/param?
+    auth_type = response["data"]["resource"]["api_details"]["api_source"][
+        "auth_type"
+    ]  # if token/uname-pwd
 
-    request_type = response["data"]["resource"]["api_details"][
-        "request_type"
-    ]
+    request_type = response["data"]["resource"]["api_details"]["request_type"]
+    format_loc = response["data"]["resource"]["api_details"]["format_loc"]
+    format_key = response["data"]["resource"]["api_details"]["format_key"]
 
     param = {}
     header = {}
     if auth_type == "TOKEN":
-        auth_token = response["data"]["resource"]["api_details"]["api_source"]["auth_token"]
-        auth_token_key = response["data"]["resource"]["api_details"]["api_source"]["auth_token_key"]
+        auth_token = response["data"]["resource"]["api_details"]["api_source"][
+            "auth_token"
+        ]
+        auth_token_key = response["data"]["resource"]["api_details"]["api_source"][
+            "auth_token_key"
+        ]
     if auth_type == "CREDENTIAL":
-        auth_credentials = response["data"]["resource"]["api_details"]["api_source"]["auth_credentials"]  # - uname pwd
+        auth_credentials = response["data"]["resource"]["api_details"]["api_source"][
+            "auth_credentials"
+        ]  # - uname pwd
         uname_key = auth_credentials[0]["key"]
         uname = auth_credentials[0]["value"]
         pwd_key = auth_credentials[1]["key"]
@@ -138,9 +163,22 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         elif auth_type == "CREDENTIAL":
             param = {uname_key: uname, pwd_key: pwd}
 
+    if format_key and format_key != "":
+        if format_loc == "HEADER":
+            header.update({format_key: target_format})
+        if format_loc == "PARAM":
+            param.update({format_key: target_format})
+
     response_type = response["data"]["resource"]["api_details"]["response_type"]
     param.update(json.loads(data_request_parameters))
-    print("final params.........................................$$$$", request_type, param, headers, base_url, url_path)
+    print(
+        "final params.........................................$$$$",
+        request_type,
+        param,
+        headers,
+        base_url,
+        url_path,
+    )
     if request_type == "GET":
         try:
             api_request = requests.get(
@@ -159,7 +197,10 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
             base_url + url_path, headers=header, params=param, verify=False
         )
     api_response = api_request.text
-    format_changed_file = "" # holds the  filename if change_format transformation is applied
+    format_changed_file = (
+        ""  # holds the  filename if change_format transformation is applied
+    )
+    response_type = target_format if target_format != "" else response_type
     if response_type == "JSON":
         # temp_file_name = uuid.uuid4().hex + ".json"
         # if p_id is not None:
@@ -195,7 +236,7 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         #     with open(file_name + "-data.json", 'w') as f:
         #         f.write(transformed_data)
         #     file_path = file_name + "-data.json"
-        with open(file_name + "-data.json", 'w') as f:
+        with open(file_name + "-data.json", "w") as f:
             f.write(api_response)
             file_path = file_name + "-data.json"
     if response_type == "CSV":
@@ -221,7 +262,9 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         if request_columns == []:
             column_selected_df = transformed_data
         else:
-            column_selected_df = transformed_data.loc[:, transformed_data.columns.isin(request_columns)]
+            column_selected_df = transformed_data.loc[
+                :, transformed_data.columns.isin(request_columns)
+            ]
         # if row length is not specified return all rows
         if request_rows == "" or int(request_rows) > len(column_selected_df):
             final_df = column_selected_df
@@ -247,13 +290,11 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
         final_df.to_csv(file_name + "-data.csv")
         file_path = file_name + "-data.csv"
     if response_type == "XML":
-        with open(file_name + "-data.xml", 'w') as f:
+        with open(file_name + "-data.xml", "w") as f:
             f.write(api_response)
         file_path = file_name + "-data.xml"
     status = "FETCHED"
-    files = [
-        ('0', (file_path, open(file_path, 'rb'), response_type))
-    ]
+    files = [("0", (file_path, open(file_path, "rb"), response_type))]
     print("uploading....&&&&", files)
     variables = {"file": None}
 
@@ -275,18 +316,18 @@ def api_resource_query_task(p_id, api_source_id, request_id, request_columns, re
   }}
 }}"""
     print(file_upload_query)
-    operations = json.dumps({
-        "query": file_upload_query,
-        "variables": variables
-    })
+    operations = json.dumps({"query": file_upload_query, "variables": variables})
     # headers = {}
     try:
-        response = requests.post(graph_ql_url, data={"operations": operations, "map": map},
-                                 files=files, headers=headers)
+        response = requests.post(
+            graph_ql_url,
+            data={"operations": operations, "map": map},
+            files=files,
+            headers=headers,
+        )
         print(response.text)
     except Exception as e:
         print(e)
     finally:
         files[0][1][1].close()
         os.remove(file_path)
-
