@@ -11,6 +11,7 @@ mod = __import__('tasks', fromlist=settings.tasks.values())
 
 
 def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format):
+    db_action = "update"
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
     data = None

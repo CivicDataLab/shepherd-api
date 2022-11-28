@@ -36,14 +36,16 @@ def create_pipeline(post_data, p_id):
     p.save()
     db_action = post_data.get('db_action', None)
     data_url = data_download_url + str(res_id)
+    file_format = "" # initial file format of the resource.
+    temp_file_name = uuid.uuid4().hex
     try:
         response = graphql_service.resource_query(res_id)
         print(response)
+        file_format = response['data']['resource']['file_details']['format']
     except Exception as e:
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
         p.err_msg = str(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
         p.save()
-    file_format = response['data']['resource']['file_details']['format']
     if file_format == "CSV":
         try:
             data = read_data(data_url)
@@ -52,7 +54,6 @@ def create_pipeline(post_data, p_id):
             logger.info(f"INFO: Pipeline created")
             p.resource_identifier = res_id
             p.save()
-            temp_file_name = uuid.uuid4().hex
             if not data.empty:
                 data.to_pickle(temp_file_name)
         except Exception as e:
@@ -68,7 +69,7 @@ def create_pipeline(post_data, p_id):
             logger.info(f"INFO: Pipeline created")
             p.resource_identifier = res_id
             p.save()
-            temp_file_name = uuid.uuid4().hex + ".json"
+            temp_file_name = temp_file_name + ".json"
             json_object = json.dumps(data, indent=4)
             with open(temp_file_name, "w") as outfile:
                 outfile.write(json_object)
@@ -78,7 +79,27 @@ def create_pipeline(post_data, p_id):
             p.status = "Failed"
             p.err_msg = str(e)
             p.save()
-
+            # if to create a new res, create a copy of existing resource
+    if db_action == "create":
+        resource_name = response['data']['resource']['title'] + "-" + (str(uuid.uuid4().hex)[0:5])
+        description = response['data']['resource']['description']
+        schema = response['data']['resource']['schema']
+        org_id = response['data']['resource']['dataset']['catalog']['organization']['id']
+        files = [
+            ('0', (temp_file_name, open(temp_file_name, "rb"), str(file_format).lower()))
+        ]
+        print(files)
+        create_resource_response = graphql_service.create_resource(resource_name,
+                                                     description,
+                                                     schema,
+                                                     file_format,
+                                                     files, org_id, dataset_id)
+        p.resultant_res_id = create_resource_response['data']['create_resource']['resource']['id']
+        print("Created a copy at----", p.resultant_res_id)
+        # assign res_id of response the value of new_res id as update_resource uses this id.
+        response['data']['resource']['id'] = p.resultant_res_id
+    else:
+        pass
 
     message_body = {
         'p_id': p_id,

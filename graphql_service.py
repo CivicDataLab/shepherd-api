@@ -95,14 +95,17 @@ def create_resource(resource_name, description, schema, file_format, files, org_
         response = requests.post(graph_ql_url, data={"operations": operations,
                                                      "map": map}, files=files, headers=headers)
         response_json = json.loads(response.text)
+        print(response_json)
         return response_json
-    except:
+    except Exception as e:
+        print(str(e))
         return None
 
 
 @get_sys_token
 def update_resource(res_details, file_format, schema, files, org_id, access_token=None):
     variables = {"file": None}
+    print(files)
     map = json.dumps({"0": ["variables.file"]})
     query = f"""
                     mutation($file: Upload!) {{update_resource(resource_data: {{
