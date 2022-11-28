@@ -22,6 +22,31 @@ graph_ql_url = os.environ.get(
     "GRAPH_QL_URL", config.get("datapipeline", "GRAPH_QL_URL")
 )
 
+
+def json_keep_column(data, cols):
+    try:
+
+        def remove_a_key(d, remove_key):
+            for key in list(d.keys()):
+                if key not in remove_key:
+                    del d[key]
+                else:
+                    keep_col(d[key], remove_key)
+
+        def keep_col(d, remove_key):
+            if isinstance(d, dict):
+                remove_a_key(d, remove_key)
+            if isinstance(d, list):
+                for each in d:
+                    if isinstance(each, dict):
+                        remove_a_key(each, remove_key)
+            return d
+
+        return keep_col(data, cols)
+    except:
+        return data
+
+
 # @background(queue="api_res_operation")
 @get_sys_token
 def api_resource_query_task(
@@ -178,6 +203,8 @@ def api_resource_query_task(
         headers,
         base_url,
         url_path,
+        target_format,
+        response_type,
     )
     if request_type == "GET":
         try:
@@ -201,7 +228,7 @@ def api_resource_query_task(
         ""  # holds the  filename if change_format transformation is applied
     )
     response_type = target_format if target_format != "" else response_type
-    if response_type == "JSON":
+    if response_type.lower() == "json":
         # temp_file_name = uuid.uuid4().hex + ".json"
         # if p_id is not None:
         #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
@@ -212,7 +239,7 @@ def api_resource_query_task(
         #     pipeline_obj = Pipeline.objects.get(pk=p_id)
         #     pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
         #     pipeline_obj.save()
-        #     transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
+        # transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
         #     print("^^^^", type(transformed_data))
         #     if not isinstance(transformed_data, str):
         #         transformed_data = json.dumps(transformed_data)
@@ -236,10 +263,13 @@ def api_resource_query_task(
         #     with open(file_name + "-data.json", 'w') as f:
         #         f.write(transformed_data)
         #     file_path = file_name + "-data.json"
+        data = api_request.json()
+        filtered_data = json_keep_column(data, request_columns)
         with open(file_name + "-data.json", "w") as f:
-            f.write(api_response)
+            json.dump(filtered_data, f)
+            # f.write(filtered_data)
             file_path = file_name + "-data.json"
-    if response_type == "CSV":
+    if response_type.lower() == "csv":
         print(api_response)
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
@@ -289,7 +319,11 @@ def api_resource_query_task(
         #     file_path = file_name + "-data.csv"
         final_df.to_csv(file_name + "-data.csv")
         file_path = file_name + "-data.csv"
-    if response_type == "XML":
+    if response_type.lower() == "xml":
+        with open(file_name + "-data.xml", "w") as f:
+            f.write(api_response)
+        file_path = file_name + "-data.xml"
+    if response_type.lower() not in ["xml", "csv", "json"]:
         with open(file_name + "-data.xml", "w") as f:
             f.write(api_response)
         file_path = file_name + "-data.xml"
