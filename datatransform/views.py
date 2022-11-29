@@ -211,6 +211,7 @@ def pipe_create(request):
         if db_action == "create":
             new_res_id = None
         else:
+            # if the db action is to 'update' resultant_id is same as res_id
             new_res_id = res_id
             p.resultant_res_id = res_id
         logger = log_utils.set_log_file(p_id, pipeline_name)
@@ -238,6 +239,36 @@ def pipe_create(request):
         context = {"result": {
             "p_id": p_id,
             "new_res_id": new_res_id
+        },
+            "Success": True}
+        return JsonResponse(context, safe=False)
+
+
+def pipe_update(request):
+    """ Hit this api to add more tasks to the existing pipeline """
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode('utf-8'))
+        p_id = post_data.get('p_id', None)
+        pipeline_object = Pipeline.objects.get(pk=p_id)
+        pipeline_name = getattr(pipeline_object, "pipeline_name")
+        logger = log_utils.get_logger_for_existing_file(p_id)
+        transformers_list = post_data.get("transformers_list", None)
+        transformers_list = [i for i in transformers_list if i]
+        for _, each in enumerate(transformers_list):
+            task_name = each.get("name", None)
+            task_order_no = each.get("order_no", None)
+            task_context = each.get("context", None)
+            pipeline_object.task_set.create(
+                task_name=task_name,
+                status="Created",
+                order_no=task_order_no,
+                context=task_context,
+            )
+        logger.info(f"INFO: Received request to update the pipeline - {pipeline_name} "
+                    f"with the task - {transformers_list}")
+        pipeline_creator_bg.create_pipeline(post_data, p_id)
+        context = {"result": {
+            "p_id": p_id,
         },
             "Success": True}
         return JsonResponse(context, safe=False)

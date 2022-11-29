@@ -69,12 +69,14 @@ def resource_query(res_id, access_token=None):
 
 
 @get_sys_token
-def create_resource(resource_name, description, schema, file_format, files, org_id, dataet_id, access_token=None):
+def create_resource(resource_name, description, schema, file_format, files, org_id, dataset_id, access_token=None):
+    print(file_format, "88888888")
+    print(type(files))
     query = f"""mutation 
         mutation_create_resource($file: Upload!) 
         {{create_resource(
                     resource_data: {{ title:"{resource_name}", description:"{description}",    
-                    dataset: "{dataet_id}", status : "",
+                    dataset: "{dataset_id}", status : "",
                     schema: {schema}, file_details:{{format: "{file_format}", file: $file,  remote_url: ""}}
                     }})
                     {{
@@ -105,7 +107,6 @@ def create_resource(resource_name, description, schema, file_format, files, org_
 @get_sys_token
 def update_resource(res_details, file_format, schema, files, org_id, access_token=None):
     variables = {"file": None}
-    print(files)
     map = json.dumps({"0": ["variables.file"]})
     query = f"""
                     mutation($file: Upload!) {{update_resource(resource_data: {{

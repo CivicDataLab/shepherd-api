@@ -33,14 +33,18 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
         print(" got pipeline id...", pipeline_id)
         print("data before,,,%%%", data)
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
-        tasks = pipeline_object.task_set.all().order_by("order_no")
+        task = list(pipeline_object.task_set.all().order_by("order_no"))[-1]
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
 
-        def execution_from_model(task):
+        if getattr(task, "status") == "Created":
             new_pipeline.add(task)
+        print(new_pipeline._commands)
 
-        [execution_from_model(task) for task in tasks]
+        # def execution_from_model(task):
+        #     new_pipeline.add(task)
+
+        # [execution_from_model(task) for task in tasks]
         if res_details == "api_res" and file_format == "CSV":
             prefect_tasks.pipeline_executor(new_pipeline)
             return new_pipeline.data

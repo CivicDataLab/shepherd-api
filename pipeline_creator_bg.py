@@ -13,6 +13,7 @@ from datatransform.models import Pipeline
 import graphql_service
 from configparser import ConfigParser
 import os
+import shutil
 
 config = ConfigParser()
 
@@ -79,25 +80,38 @@ def create_pipeline(post_data, p_id):
             p.status = "Failed"
             p.err_msg = str(e)
             p.save()
-            # if to create a new res, create a copy of existing resource
+    # if to create a new res, create a copy of existing resource
     if db_action == "create":
-        resource_name = response['data']['resource']['title'] + "-" + (str(uuid.uuid4().hex)[0:5])
+        resource_name = response['data']['resource']['title'] +  "-" + (str(uuid.uuid4().hex)[0:5])
+        #
         description = response['data']['resource']['description']
         schema = response['data']['resource']['schema']
         org_id = response['data']['resource']['dataset']['catalog']['organization']['id']
+        file_path = resource_name + "." + str(file_format).lower()
+        # copying the data to the file with same title as resource
+        shutil.copy(temp_file_name, file_path)
         files = [
-            ('0', (temp_file_name, open(temp_file_name, "rb"), str(file_format).lower()))
+            ('0', (file_path, open(file_path, "rb"), str(file_format).lower()))
         ]
         print(files)
-        create_resource_response = graphql_service.create_resource(resource_name,
+        try:
+            create_resource_response = graphql_service.create_resource(resource_name,
                                                      description,
                                                      schema,
                                                      file_format,
                                                      files, org_id, dataset_id)
-        p.resultant_res_id = create_resource_response['data']['create_resource']['resource']['id']
-        print("Created a copy at----", p.resultant_res_id)
-        # assign res_id of response the value of new_res id as update_resource uses this id.
-        response['data']['resource']['id'] = p.resultant_res_id
+            p.resultant_res_id = create_resource_response['data']['create_resource']['resource']['id']
+            p.save()
+            print("Created a copy at----", p.resultant_res_id)
+            # assign res_id of response - the value of new_res id as update_resource uses this id
+            # for later steps.
+            response['data']['resource']['id'] = p.resultant_res_id
+        except Exception as e:
+            logger.error(f"ERROR: Got an error while creating a copy of the given resorce"
+                         f"{res_id} - {str(e)}")
+        finally:
+            files[0][1][1].close()
+            os.remove(file_path)
     else:
         pass
 
