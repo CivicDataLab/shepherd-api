@@ -6,6 +6,8 @@ from io import StringIO
 import pandas as pd
 import requests
 from background_task import background
+import xmltodict
+import dicttoxml
 
 import log_utils
 from datatransform.models import Pipeline
@@ -264,7 +266,10 @@ def api_resource_query_task(
         #         f.write(transformed_data)
         #     file_path = file_name + "-data.json"
         data = api_request.json()
-        filtered_data = json_keep_column(data, request_columns)
+        if len(request_columns) > 0:
+            filtered_data = json_keep_column(data, request_columns)
+        else:
+            filtered_data = data
         with open(file_name + "-data.json", "w") as f:
             json.dump(filtered_data, f)
             # f.write(filtered_data)
@@ -320,8 +325,14 @@ def api_resource_query_task(
         final_df.to_csv(file_name + "-data.csv")
         file_path = file_name + "-data.csv"
     if response_type.lower() == "xml":
+        data_dict = xmltodict.parse(api_response)
+        if len(request_columns) > 0:
+            filtered_data = json_keep_column(data_dict, request_columns)
+        else:
+            filtered_data = data_dict
+        xml_data = dicttoxml(data_dict, custom_root="test", attr_type=False)
         with open(file_name + "-data.xml", "w") as f:
-            f.write(api_response)
+            f.write(xml_data)
         file_path = file_name + "-data.xml"
     if response_type.lower() not in ["xml", "csv", "json"]:
         with open(file_name + "-data.xml", "w") as f:
