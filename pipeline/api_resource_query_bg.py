@@ -49,7 +49,7 @@ def json_keep_column(data, cols):
         return data
 
 
-# @background(queue="api_res_operation")
+@background(queue="api_res_operation")
 @get_sys_token
 def api_resource_query_task(
     p_id,
