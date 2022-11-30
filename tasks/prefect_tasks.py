@@ -106,14 +106,17 @@ def anonymize(context, pipeline, task_obj):
                     new_vals.append(replace_val)
             elif option == "replace_nth":
                 n = context.get('n')
-                n = int(n) - 1
+                # n = int(n) - 1
                 if special_char == "random":
                     replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
-                    replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
-                    new_vals.append(replace_val)
+                    for i in range(0, len(val), int(n)):
+                        val = val[ : i] + replacement + val[i + 1: ] 
+                    # replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
+                    new_vals.append(val)
                 else:
-                    replace_val = val[0:int(n)] + special_char + val[int(n) + 1:]
-                    new_vals.append(replace_val)
+                    for i in range(0, len(val), int(n)):
+                        val = val[ : i] + special_char + val[i + 1: ] 
+                    new_vals.append(val)
             elif option == "retain_first_n":
                 n = context.get('n')
                 if special_char == "random":
