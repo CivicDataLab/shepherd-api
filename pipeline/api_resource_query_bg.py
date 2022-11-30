@@ -49,7 +49,7 @@ def json_keep_column(data, cols):
         return data
 
 
-# @background(queue="api_res_operation")
+@background(queue="api_res_operation")
 @get_sys_token
 def api_resource_query_task(
     p_id,
@@ -326,13 +326,16 @@ def api_resource_query_task(
         file_path = file_name + "-data.csv"
     if response_type.lower() == "xml":
         data_dict = xmltodict.parse(api_response)
+        print('-----------dict', data_dict, '-----------', request_columns)
         if len(request_columns) > 0:
             filtered_data = json_keep_column(data_dict, request_columns)
         else:
             filtered_data = data_dict
-        xml_data = dicttoxml(data_dict, custom_root="test", attr_type=False)
+        print ('----datafltrd', filtered_data)
+        xml_data = dicttoxml.dicttoxml(data_dict)
+        print ('-----xml', xml_data)
         with open(file_name + "-data.xml", "w") as f:
-            f.write(xml_data)
+            f.write(xml_data.decode())
         file_path = file_name + "-data.xml"
     if response_type.lower() not in ["xml", "csv", "json"]:
         with open(file_name + "-data.xml", "w") as f:

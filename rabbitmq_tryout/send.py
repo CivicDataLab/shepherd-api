@@ -86,12 +86,14 @@ import pdfkit
 # data = pd.read_json('data.json')
 # pdata = skip_col(data, "gender")
 # print(pdata)
-a = False
-# a = "k"
-a = []
-if a == []:
-    print("hi")
+import pandas as pd
 
+index = "country"
+columns = "state"
+values = "city"
+data = pd.read_csv("punjab_aqi.csv")
+agged = pd.pivot_table(data, index=index, columns=columns, values=values, aggfunc='count')
+print(agged)
 
 
 
