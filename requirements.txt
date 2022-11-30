@@ -87,3 +87,5 @@ urllib3==1.26.7
 uvicorn==0.18.3
 websocket-client==1.4.1
 yarl==1.8.1
+xmltodict==0.13.0
+dicttoxml==1.7.11

@@ -211,7 +211,7 @@ def aggregate(context, pipeline, task_obj):
     columns = columns.split(",")
     values = values.split(",")
     try:
-        pipeline.data = pd.pivot(pipeline.data, index=index, columns=columns, values=values, aggfunc='count')
+        pipeline.data = pd.pivot_table(pipeline.data, index=index, columns=columns, values=values, aggfunc='count')
         inferred_schema = build_table_schema(pipeline.data)
         fields = inferred_schema['fields']
         new_schema = []

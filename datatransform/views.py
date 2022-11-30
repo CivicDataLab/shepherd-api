@@ -59,7 +59,7 @@ def transformer_list(request):
         },
         {
             "name": "change_format",
-            "context": [{"name": "format", "type": "string", "desc": "xml/json/pdf"}],
+            "context": [{"name": "format", "type": "string", "desc": "Please select the format to which the resource needs to be changed"}],
         },
         {
             "name": "anonymize",
@@ -79,7 +79,7 @@ def transformer_list(request):
                     "type": "special_char_single",
                     "desc": "Choose a special character",
                 },
-                {"name": "n", "type": "n_type", "desc": "Please enter value of n"},
+                {"name": "n", "type": "n_type", "desc": "Please enter the value of n"},
             ],
         },
         {
