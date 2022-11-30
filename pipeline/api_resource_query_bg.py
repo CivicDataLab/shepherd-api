@@ -49,7 +49,7 @@ def json_keep_column(data, cols):
         return data
 
 
-@background(queue="api_res_operation")
+#@background(queue="api_res_operation")
 @get_sys_token
 def api_resource_query_task(
     p_id,
@@ -265,6 +265,7 @@ def api_resource_query_task(
         #     with open(file_name + "-data.json", 'w') as f:
         #         f.write(transformed_data)
         #     file_path = file_name + "-data.json"
+        print ('--------datafromapi', api_request)
         data = api_request.json()
         if len(request_columns) > 0:
             filtered_data = json_keep_column(data, request_columns)
