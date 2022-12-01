@@ -265,10 +265,12 @@ def api_resource_query_task(
         #     with open(file_name + "-data.json", 'w') as f:
         #         f.write(transformed_data)
         #     file_path = file_name + "-data.json"
-        print ('--------datafromapi', api_request)
+        print ('--------datafromapi', api_request.text)
         data = api_request.json()
+        print ('--------------------jsonparse', data, '----', request_columns)
         if len(request_columns) > 0:
             filtered_data = json_keep_column(data, request_columns)
+            print ('-----------------fltrddata', filtered_data)
         else:
             filtered_data = data
         with open(file_name + "-data.json", "w") as f:
@@ -276,9 +278,10 @@ def api_resource_query_task(
             # f.write(filtered_data)
             file_path = file_name + "-data.json"
     if response_type.lower() == "csv":
-        print(api_response)
+        print('------ csv api res', api_response)
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
+        print ('------------- parsed csv', data, '------', request_columns)
         # temp_file_name = uuid.uuid4().hex
         # if p_id is not None:
         #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
@@ -301,6 +304,7 @@ def api_resource_query_task(
             column_selected_df = transformed_data.loc[
                 :, transformed_data.columns.isin(request_columns)
             ]
+        print ('------------filteredcsv', column_selected_df)
         # if row length is not specified return all rows
         if request_rows == "" or int(request_rows) > len(column_selected_df):
             final_df = column_selected_df
@@ -326,6 +330,7 @@ def api_resource_query_task(
         final_df.to_csv(file_name + "-data.csv", index=False)
         file_path = file_name + "-data.csv"
     if response_type.lower() == "xml":
+        print ('-----------apiresp', api_response)
         data_dict = xmltodict.parse(api_response)
         print('-----------dict', data_dict, '-----------', request_columns)
         if len(request_columns) > 0:
