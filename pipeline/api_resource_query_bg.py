@@ -323,7 +323,7 @@ def api_resource_query_task(
         # else:
         #     final_df.to_csv(file_name + "-data.csv")
         #     file_path = file_name + "-data.csv"
-        final_df.to_csv(file_name + "-data.csv")
+        final_df.to_csv(file_name + "-data.csv", index=False)
         file_path = file_name + "-data.csv"
     if response_type.lower() == "xml":
         data_dict = xmltodict.parse(api_response)
