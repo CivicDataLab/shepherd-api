@@ -271,8 +271,10 @@ def api_resource_query_task(
         #     file_path = file_name + "-data.json"
         print("--------datafromapi", api_request)
         data = api_request.json()
+        print("--------------------jsonparse", data, "----", request_columns)
         if len(request_columns) > 0:
             filtered_data = json_keep_column(data, request_columns)
+            print("-----------------fltrddata", filtered_data)
         else:
             filtered_data = data
         with open(file_name + "-data.json", "w") as f:
@@ -283,6 +285,7 @@ def api_resource_query_task(
         print(api_response)
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
+        print("------------- parsed csv", data, "------", request_columns)
         # temp_file_name = uuid.uuid4().hex
         # if p_id is not None:
         #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")

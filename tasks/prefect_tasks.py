@@ -97,6 +97,7 @@ def anonymize(context, pipeline, task_obj):
         df_col_values = pipeline.data[col].values.tolist()
         new_vals = []
         for val in df_col_values:
+            val = str(val)
             if option == "replace_all":
                 if special_char == "random":
                     replace_val = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=len(val)))
