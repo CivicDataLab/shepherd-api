@@ -16,13 +16,14 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
     print("pipeline_id is ", pipeline_id)
     data = None
     try:
-        if file_format == "CSV":
+        if file_format.lower() == "csv":
             try:
-                data = pd.read_pickle(data_pickle)
+                data = pd.read_csv(data_pickle, index=False)
+                print(data_pickle, "?????")
                 os.remove(data_pickle)
             except:
                 pass
-        elif file_format == "JSON":
+        elif file_format.lower() == "json":
             f = open(data_pickle, "rb")
             data = json.load(f)
             f.close()
@@ -46,7 +47,7 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
         #     new_pipeline.add(task)
 
         # [execution_from_model(task) for task in tasks]
-        if res_details == "api_res" and file_format == "CSV":
+        if res_details == "api_res" and file_format.lower() == "csv":
             prefect_tasks.pipeline_executor(new_pipeline)
             return new_pipeline.data
         elif res_details == "api_res" and file_format == "JSON":

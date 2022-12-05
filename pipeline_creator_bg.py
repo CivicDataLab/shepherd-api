@@ -48,7 +48,8 @@ def create_pipeline(post_data, p_id):
         logger.error(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
         p.err_msg = str(f"ERROR: couldn't fetch response from graphql. Got an Exception - {str(e)}")
         p.save()
-    if file_format == "CSV":
+    print("###", file_format)
+    if file_format.lower() == "csv":
         try:
             data = read_data(data_url)
             p = Pipeline.objects.get(pk=p_id)
@@ -57,7 +58,7 @@ def create_pipeline(post_data, p_id):
             p.resource_identifier = res_id
             p.save()
             if not data.empty:
-                data.to_pickle(temp_file_name)
+                data.to_csv(temp_file_name)
         except Exception as e:
             data = None
             p.status = "Failed"
@@ -90,6 +91,9 @@ def create_pipeline(post_data, p_id):
         #
         description = response['data']['resource']['description']
         schema = response['data']['resource']['schema']
+        schema = json.dumps(schema)
+        schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
+            '"description":', 'description:')
         org_id = response['data']['resource']['dataset']['catalog']['organization']['id']
         file_path = resource_name + "." + str(file_format).lower()
         # copying the data to the file with same title as resource
