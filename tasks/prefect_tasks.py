@@ -97,6 +97,7 @@ def anonymize(context, pipeline, task_obj):
         df_col_values = pipeline.data[col].values.tolist()
         new_vals = []
         for val in df_col_values:
+            val = str(val)
             if option == "replace_all":
                 if special_char == "random":
                     replace_val = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=len(val)))
@@ -106,14 +107,22 @@ def anonymize(context, pipeline, task_obj):
                     new_vals.append(replace_val)
             elif option == "replace_nth":
                 n = context.get('n')
-                n = int(n) - 1
+                n = int(n)  #- 1
                 if special_char == "random":
                     replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
-                    replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
-                    new_vals.append(replace_val)
+                                        
+                    for i in range((n-1), len(val)+(n-1), n):
+                        val = val[ : i] + replacement + val[i + 1: ] 
+                    # for i in range(0, len(val), int(n)):
+                    #     val = val[ : i] + replacement + val[i + 1: ] 
+                    # replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
+                    new_vals.append(val)
                 else:
-                    replace_val = val[0:int(n)] + special_char + val[int(n) + 1:]
-                    new_vals.append(replace_val)
+                    for i in range((n-1), len(val)+(n-1), n):
+                        val = val[ : i] + special_char + val[i + 1: ]                     
+                    # for i in range(0, len(val), int(n)):
+                    #     val = val[ : i] + special_char + val[i + 1: ] 
+                    new_vals.append(val)
             elif option == "retain_first_n":
                 n = context.get('n')
                 if special_char == "random":
