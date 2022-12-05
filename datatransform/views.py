@@ -207,6 +207,7 @@ def pipe_create(request):
         res_id = post_data.get('res_id', None)
         dataset_id = post_data.get('dataset_id', None)
         db_action = post_data.get('db_action', None)
+
         # if the task is to create new res - new_res_id is returned at next step, now it's None.
         if db_action == "create":
             new_res_id = None
@@ -215,22 +216,22 @@ def pipe_create(request):
             new_res_id = res_id
             p.resultant_res_id = res_id
         logger = log_utils.set_log_file(p_id, pipeline_name)
-        transformers_list = post_data.get("transformers_list", None)
-        transformers_list = [i for i in transformers_list if i]
-        for _, each in enumerate(transformers_list):
-            task_name = each.get("name", None)
-            task_order_no = each.get("order_no", None)
-            task_context = each.get("context", None)
-            p.task_set.create(
-                task_name=task_name,
-                status="Created",
-                order_no=task_order_no,
-                context=task_context,
-            )
-        logger.info(
-            f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
-            f"{transformers_list}"
-        )
+        # transformers_list = post_data.get("transformers_list", None)
+        # transformers_list = [i for i in transformers_list if i]
+        # for _, each in enumerate(transformers_list):
+        #     task_name = each.get("name", None)
+        #     task_order_no = each.get("order_no", None)
+        #     task_context = each.get("context", None)
+        #     p.task_set.create(
+        #         task_name=task_name,
+        #         status="Created",
+        #         order_no=task_order_no,
+        #         context=task_context,
+        #     )
+        # logger.info(
+        #     f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
+        #     f"{transformers_list}"
+        # )
         p.dataset_id = dataset_id
         p.resource_identifier = res_id
         p.save()

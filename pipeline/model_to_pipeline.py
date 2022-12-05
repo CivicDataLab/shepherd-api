@@ -29,12 +29,13 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
             os.remove(data_pickle)
             if isinstance(data, str):
                 data = json.loads(data)
-
+        pipeline_object = Pipeline.objects.get(pk=pipeline_id)
+        new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print(" got pipeline id...", pipeline_id)
         print("data before,,,%%%", data)
-        pipeline_object = Pipeline.objects.get(pk=pipeline_id)
+
         task = list(pipeline_object.task_set.all().order_by("order_no"))[-1]
-        new_pipeline = pipeline.Pipeline(pipeline_object, data)
+
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
 
         if getattr(task, "status") == "Created":
@@ -91,5 +92,5 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
 
     except Exception as e:
         new_pipeline.model.err_msg = str(e)
-        pipeline.model.save()
+        new_pipeline.model.save()
         raise e

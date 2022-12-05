@@ -33,6 +33,7 @@ def create_pipeline(post_data, p_id):
 
     res_id = post_data.get('res_id', None)
     dataset_id = post_data.get('dataset_id', None)
+    new_res_name = post_data.get('new_res_name', None)
     p.dataset_id = dataset_id
     p.save()
     db_action = post_data.get('db_action', None)
@@ -82,7 +83,10 @@ def create_pipeline(post_data, p_id):
             p.save()
     # if to create a new res, create a copy of existing resource
     if db_action == "create":
-        resource_name = response['data']['resource']['title'] +  "-" + (str(uuid.uuid4().hex)[0:5])
+        if new_res_name is not None:
+            resource_name = new_res_name
+        else:
+            resource_name = response['data']['resource']['title'] +  "-" + (str(uuid.uuid4().hex)[0:5])
         #
         description = response['data']['resource']['description']
         schema = response['data']['resource']['schema']
@@ -111,28 +115,30 @@ def create_pipeline(post_data, p_id):
                          f"{res_id} - {str(e)}")
         finally:
             files[0][1][1].close()
-            os.remove(file_path)
+            # os.remove(file_path)
     else:
         pass
+    pipe_action = post_data.get('pipe_action')
+    #  Run transformations only when the pipe_action is update. Else need not run this.
+    if pipe_action == "update":
+        message_body = {
+            'p_id': p_id,
+            'temp_file_name': temp_file_name,
+            'res_details': response,
+            'db_action': db_action,
+            'file_format': file_format
+        }
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=rabbit_mq_host))
+        channel = connection.channel()
 
-    message_body = {
-        'p_id': p_id,
-        'temp_file_name': temp_file_name,
-        'res_details': response,
-        'db_action': db_action,
-        'file_format': file_format
-    }
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=rabbit_mq_host))
-    channel = connection.channel()
-
-    channel.queue_declare(queue='pipeline_ui_queue')
-    channel.basic_publish(exchange='',
-                          routing_key='pipeline_ui_queue',
-                          body=json.dumps(message_body))
-    logger.info(f"INFO: Published {message_body}")
-    print(" [x] Sent %r" % message_body)
-    connection.close()
+        channel.queue_declare(queue='pipeline_ui_queue')
+        channel.basic_publish(exchange='',
+                              routing_key='pipeline_ui_queue',
+                              body=json.dumps(message_body))
+        logger.info(f"INFO: Published {message_body}")
+        print(" [x] Sent %r" % message_body)
+        connection.close()
 
 
 def read_data(data_url):
