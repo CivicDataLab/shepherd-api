@@ -91,7 +91,11 @@ def create_pipeline(post_data, p_id):
         #
         description = response['data']['resource']['description']
         schema = response['data']['resource']['schema']
-        schema = json.dumps(schema)
+        schema1= []
+        for each in schema:
+            del each['id']
+            schema1.append(each)
+        schema = json.dumps(schema1)
         schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
             '"description":', 'description:')
         org_id = response['data']['resource']['dataset']['catalog']['organization']['id']
