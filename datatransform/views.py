@@ -234,6 +234,7 @@ def pipe_create(request):
         # )
         p.dataset_id = dataset_id
         p.resource_identifier = res_id
+        p.db_action = db_action
         p.save()
 
         pipeline_creator_bg.create_pipeline(post_data, p_id)
