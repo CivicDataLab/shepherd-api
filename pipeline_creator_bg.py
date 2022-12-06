@@ -129,6 +129,7 @@ def create_pipeline(post_data, p_id):
     pipe_action = post_data.get('pipe_action')
     #  Run transformations only when the pipe_action is update. Else need not run this.
     if pipe_action == "update":
+        print ('****------------------', file_format)
         message_body = {
             'p_id': p_id,
             'temp_file_name': temp_file_name,

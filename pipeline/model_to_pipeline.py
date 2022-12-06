@@ -16,13 +16,15 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
     print("pipeline_id is ", pipeline_id)
     data = None
     try:
+        print ('******',file_format,  file_format.lower()=="csv")
         if file_format.lower() == "csv":
+            print ('*--------------------', data_pickle)
             try:
-                data = pd.read_csv(data_pickle, index=False)
+                data = pd.read_csv(data_pickle)
                 print(data_pickle, "?????")
                 os.remove(data_pickle)
-            except:
-                pass
+            except Exception as e:
+                print ('----error', str(e))
         elif file_format.lower() == "json":
             f = open(data_pickle, "rb")
             data = json.load(f)
