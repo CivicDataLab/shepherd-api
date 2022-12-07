@@ -11,36 +11,45 @@ mod = __import__('tasks', fromlist=settings.tasks.values())
 
 
 def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format):
+    db_action = "update"
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
     data = None
     try:
-        if file_format == "CSV":
+        print ('******',file_format,  file_format.lower()=="csv")
+        if file_format.lower() == "csv":
+            print ('*--------------------', data_pickle)
             try:
-                data = pd.read_pickle(data_pickle)
+                data = pd.read_csv(data_pickle)
+                print(data_pickle, "?????")
                 os.remove(data_pickle)
-            except:
-                pass
-        elif file_format == "JSON":
+            except Exception as e:
+                print ('----error', str(e))
+        elif file_format.lower() == "json":
             f = open(data_pickle, "rb")
             data = json.load(f)
             f.close()
             os.remove(data_pickle)
             if isinstance(data, str):
                 data = json.loads(data)
-
+        pipeline_object = Pipeline.objects.get(pk=pipeline_id)
+        new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print(" got pipeline id...", pipeline_id)
         print("data before,,,%%%", data)
-        pipeline_object = Pipeline.objects.get(pk=pipeline_id)
-        tasks = pipeline_object.task_set.all().order_by("order_no")
-        new_pipeline = pipeline.Pipeline(pipeline_object, data)
+
+        task = list(pipeline_object.task_set.all().order_by("order_no"))[-1]
+
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
 
-        def execution_from_model(task):
+        if getattr(task, "status") == "Created":
             new_pipeline.add(task)
+        print(new_pipeline._commands)
 
-        [execution_from_model(task) for task in tasks]
-        if res_details == "api_res" and file_format == "CSV":
+        # def execution_from_model(task):
+        #     new_pipeline.add(task)
+
+        # [execution_from_model(task) for task in tasks]
+        if res_details == "api_res" and file_format.lower() == "csv":
             prefect_tasks.pipeline_executor(new_pipeline)
             return new_pipeline.data
         elif res_details == "api_res" and file_format == "JSON":
@@ -86,5 +95,5 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
 
     except Exception as e:
         new_pipeline.model.err_msg = str(e)
-        pipeline.model.save()
+        new_pipeline.model.save()
         raise e
