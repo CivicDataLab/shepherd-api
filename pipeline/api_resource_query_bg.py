@@ -27,24 +27,24 @@ graph_ql_url = os.environ.get(
 
 def json_keep_column(data, cols):
     try:
-        
+
         def get_child_keys(d, child_keys_list):
-            if isinstance(d,  dict):
+            if isinstance(d, dict):
                 for key in list(d.keys()):
                     child_keys_list.append(key)
                     if isinstance(d[key], dict):
-                        get_child_keys(d[key], child_keys_list)  
-            if isinstance(d,  list):
+                        get_child_keys(d[key], child_keys_list)
+            if isinstance(d, list):
                 for each in d:
-                    if isinstance(each,  dict):
-                        get_child_keys(each, child_keys_list)                          
+                    if isinstance(each, dict):
+                        get_child_keys(each, child_keys_list)
 
         def remove_a_key(d, remove_key):
             for key in list(d.keys()):
                 child_keys_list = []
                 get_child_keys(d[key], child_keys_list)
-                print ('--------------', child_keys_list)
-                if key not in remove_key and not any([ item in remove_key for item in child_keys_list]):
+                print('--------------', child_keys_list)
+                if key not in remove_key and not any([item in remove_key for item in child_keys_list]):
                     del d[key]
                 else:
                     keep_col(d[key], remove_key)
@@ -77,6 +77,7 @@ def api_resource_query_task(
     errors = []
     print("2", api_source_id)
     request_id = str(request_id)
+    print("____", p_id)
     query = f"""{{
   resource(resource_id: {api_source_id}) {{
     id
@@ -148,12 +149,14 @@ def api_resource_query_task(
         }}
     }}
     """
+    print(data_request_query)
     headers = {"Authorization": access_token}
 
     get_datarequest_details = requests.post(
         graph_ql_url, json={"query": data_request_query}, headers=headers
     )
     datarequest_response = json.loads(get_datarequest_details.text)
+    print(datarequest_response, "-------")
     data_request_parameters = datarequest_response["data"]["data_request"]["parameters"]
     print(type(data_request_parameters), "????")
     file_name = (
@@ -249,48 +252,31 @@ def api_resource_query_task(
     # )
     response_type = target_format if target_format != "" else response_type
     if response_type.lower() == "json" and len(errors) == 0:
-        # temp_file_name = uuid.uuid4().hex + ".json"
-        # if p_id is not None:
-        #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
-        #     logger.info("INFO: Received API resource with pre-saved pipeline details")
-        #     json_object = json.dumps(api_response, indent=4)
-        #     with open(temp_file_name, "w") as outfile:
-        #         outfile.write(json_object)
-        #     pipeline_obj = Pipeline.objects.get(pk=p_id)
-        #     pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
-        #     pipeline_obj.save()
-        # transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
-        #     print("^^^^", type(transformed_data))
-        #     if not isinstance(transformed_data, str):
-        #         transformed_data = json.dumps(transformed_data)
-        #     transformed_file_dir = "format_changed_files/"
-        #     format_changed_file = transformed_file_dir + str(getattr(pipeline_obj, "pipeline_name"))
-        # else:
-        #     transformed_data = api_response
-        # if os.path.isfile(format_changed_file+".csv"):
-        #     file_path = format_changed_file + ".csv"
-        #     os.rename(file_path, transformed_file_dir + file_name + ".csv")
-        #     file_path = transformed_file_dir + file_name + ".csv"
-        # elif os.path.isfile(format_changed_file+".xml"):
-        #     file_path = format_changed_file + ".xml"
-        #     os.rename(file_path, transformed_file_dir + file_name + ".xml")
-        #     file_path = transformed_file_dir + file_name + ".xml"
-        # elif os.path.isfile(format_changed_file + ".pdf"):
-        #     file_path = format_changed_file + ".pdf"
-        #     os.rename(file_path, transformed_file_dir + file_name + ".pdf")
-        #     file_path = transformed_file_dir + file_name + ".pdf"
-        # else:
-        #     with open(file_name + "-data.json", 'w') as f:
-        #         f.write(transformed_data)
-        #     file_path = file_name + "-data.json"
+        temp_file_name = uuid.uuid4().hex + ".json"
+        if p_id is not None:
+            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+            logger.info("INFO: Received API resource with pre-saved pipeline details")
+            json_object = json.dumps(api_response, indent=4)
+            with open(temp_file_name, "w") as outfile:
+                outfile.write(json_object)
+            pipeline_obj = Pipeline.objects.get(pk=p_id)
+            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+            pipeline_obj.save()
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "JSON")
+            print("^^^^", type(transformed_data))
+            if not isinstance(transformed_data, str):
+                transformed_data = json.dumps(transformed_data)
+        else:
+            transformed_data = api_response
         print("--------datafromapi", api_request)
-        data = api_request.json()
-        print("--------------------jsonparse", data, "----", request_columns)
+        # data = api_request.json()
+        # print("--------------------jsonparse", data, "----", request_columns)
         if len(request_columns) > 0:
-            filtered_data = json_keep_column(data, request_columns)
+            # filtered_data = json_keep_column(data, request_columns)
+            filtered_data = json_keep_column(transformed_data, request_columns)
             print("-----------------fltrddata", filtered_data)
         else:
-            filtered_data = data
+            filtered_data = transformed_data
         with open(file_name + "-data.json", "w") as f:
             json.dump(filtered_data, f)
             # f.write(filtered_data)
@@ -300,22 +286,18 @@ def api_resource_query_task(
         csv_data = StringIO(api_response)
         data = pd.read_csv(csv_data, sep=",")
         print("------------- parsed csv", data, "------", request_columns)
-        # temp_file_name = uuid.uuid4().hex
-        # if p_id is not None:
-        #     logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
-        #     logger.info("INFO: Received API resource with pre-saved pipeline details")
-        #     if not data.empty:
-        #         data.to_pickle(temp_file_name)
-        #     pipeline_obj = Pipeline.objects.get(pk=p_id)
-        #     pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
-        #     pipeline_obj.save()
-        #     transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
-        #     transformed_file_dir = "format_changed_files/"
-        #     format_changed_file = transformed_file_dir+str(getattr(pipeline_obj, "pipeline_name"))
-        #     print("actual name-----", format_changed_file+".xml")
-        # else:
-        #     transformed_data = data
-        transformed_data = data
+        temp_file_name = uuid.uuid4().hex
+        if p_id is not None:
+            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+            logger.info("INFO: Received API resource with pre-saved pipeline details")
+            if not data.empty:
+                data.to_csv(temp_file_name)   #to_pickle(temp_file_name)
+            pipeline_obj = Pipeline.objects.get(pk=p_id)
+            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+            pipeline_obj.save()
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "CSV")
+        else:
+            transformed_data = data
         if request_columns == []:
             column_selected_df = transformed_data
         else:
@@ -338,22 +320,6 @@ def api_resource_query_task(
             else:
                 num_rows_int = int(request_rows)
                 final_df = column_selected_df.iloc[:num_rows_int]
-            # if a transformation was to change format, send that file in mutation
-            # if os.path.isfile(format_changed_file+".xml"):
-            #     file_path = format_changed_file+".xml"
-            #     os.rename(file_path, transformed_file_dir+file_name + ".xml")
-            #     file_path = transformed_file_dir+file_name + ".xml"
-            # elif os.path.isfile(format_changed_file+".json"):
-            #     file_path = format_changed_file + ".json"
-            #     os.rename(file_path, transformed_file_dir + file_name + ".json")
-            #     file_path = transformed_file_dir + file_name + ".json"
-            # elif os.path.isfile(format_changed_file + ".pdf"):
-            #     file_path = format_changed_file + ".pdf"
-            #     os.rename(file_path, transformed_file_dir + file_name + ".pdf")
-            #     file_path = transformed_file_dir + file_name + ".pdf"
-            # else:
-            #     final_df.to_csv(file_name + "-data.csv")
-            #     file_path = file_name + "-data.csv"
             final_df.to_csv(file_name + "-data.csv", index=False)
             file_path = file_name + "-data.csv"
     if response_type.lower() == "xml" and len(errors) == 0:
@@ -414,4 +380,4 @@ def api_resource_query_task(
         print(e)
     finally:
         files[0][1][1].close()
-        os.remove(file_path)
+        # os.remove(file_path)
