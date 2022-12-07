@@ -26,24 +26,23 @@ graph_ql_url = os.environ.get(
 
 
 def json_keep_column(data, cols):
-    child_keys_list = []
     try:
         
-        def get_child_keys(d):
+        def get_child_keys(d, child_keys_list):
             if isinstance(d,  dict):
                 for key in list(d.keys()):
                     child_keys_list.append(key)
                     if isinstance(d[key], dict):
-                        get_child_keys(d[key])  
+                        get_child_keys(d[key], child_keys_list)  
             if isinstance(d,  list):
                 for each in d:
                     if isinstance(each,  dict):
-                        get_child_keys(each)                          
+                        get_child_keys(each, child_keys_list)                          
 
         def remove_a_key(d, remove_key):
             for key in list(d.keys()):
                 child_keys_list = []
-                get_child_keys(d[key])
+                get_child_keys(d[key], child_keys_list)
                 print ('--------------', child_keys_list)
                 if key not in remove_key and not any([ item in remove_key for item in child_keys_list]):
                     del d[key]
