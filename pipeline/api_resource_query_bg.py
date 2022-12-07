@@ -25,7 +25,7 @@ graph_ql_url = os.environ.get(
 )
 
 
-def json_keep_column(data, cols):
+'''def json_keep_column(data, cols):
     try:
         
         def get_child_keys(d, child_keys_list):
@@ -61,6 +61,56 @@ def json_keep_column(data, cols):
         return keep_col(data, cols)
     except:
         return data
+'''
+
+
+def json_keep_column(data, cols, parentnodes):
+    print ('------------inkeepcol', parentnodes)
+    
+    try:
+        
+        def get_child_keys(d, child_keys_list):
+            if isinstance(d,  dict):
+                for key in list(d.keys()):
+                    child_keys_list.append(key)
+                    if isinstance(d[key], dict):
+                        get_child_keys(d[key], child_keys_list)  
+            if isinstance(d,  list):
+                for each in d:
+                    if isinstance(each,  dict):
+                        get_child_keys(each, child_keys_list)                          
+
+        def remove_a_key(d, parent, remove_key, parent_dict):
+            for key in list(d.keys()):
+                child_keys_list = []
+                get_child_keys(d[key], child_keys_list)
+                print ('--------------', child_keys_list)
+                if key not in remove_key and not any([ item in remove_key for item in child_keys_list]): #and parent==parent_dict.get(key, ""):
+                    del d[key]
+                else:
+                    keep_col(d[key], key, remove_key, parent_dict)
+
+        def keep_col(d, parent, remove_key, parent_dict):
+            if isinstance(d, dict):
+                remove_a_key(d, parent, remove_key, parent_dict)
+            if isinstance(d, list):
+                for each in d:
+                    if isinstance(each, dict):
+                        remove_a_key(each, parent, remove_key, parent_dict)
+            return d
+        
+
+        parent_dict = {}
+
+        for each in parentnodes:
+            node_path = [x for x in each.split('.') if x != "" and x != "." and "items" not in x]
+            parent_dict[node_path[-1]] = node_path[-2] if len(node_path)>=2 else node_path[-1]
+        return keep_col(data, "", cols, parent_dict)
+    except Exception as e:
+        raise e
+        return data
+
+
 
 
 # @background(queue="api_res_operation")
@@ -70,6 +120,7 @@ def api_resource_query_task(
     api_source_id,
     request_id,
     request_columns,
+    remove_nodes,
     request_rows,
     target_format,
     access_token=None,
@@ -287,7 +338,7 @@ def api_resource_query_task(
         data = api_request.json()
         print("--------------------jsonparse", data, "----", request_columns)
         if len(request_columns) > 0:
-            filtered_data = json_keep_column(data, request_columns)
+            filtered_data = json_keep_column(data, request_columns, remove_nodes)
             print("-----------------fltrddata", filtered_data)
         else:
             filtered_data = data
@@ -360,7 +411,7 @@ def api_resource_query_task(
         data_dict = xmltodict.parse(api_response)
         print("-----------dict", data_dict, "-----------", request_columns)
         if len(request_columns) > 0:
-            filtered_data = json_keep_column(data_dict, request_columns)
+            filtered_data = json_keep_column(data_dict, request_columns, remove_nodes)
         else:
             filtered_data = data_dict
         print("----datafltrd", filtered_data)

@@ -365,6 +365,7 @@ def api_source_query(request):
         api_source_id = str(post_data.get("api_source_id", None))
         request_id = post_data.get("request_id", None)
         request_columns = post_data.get("request_columns", "")
+        remove_nodes = post_data.get("remove_nodes", [])
         request_rows = post_data.get("request_rows", "")
         target_format = post_data.get("target_format", "")
         print("0", post_data)
@@ -385,6 +386,7 @@ def api_source_query(request):
             api_source_id,
             request_id,
             request_columns,
+            remove_nodes,
             request_rows,
             target_format,
         )
