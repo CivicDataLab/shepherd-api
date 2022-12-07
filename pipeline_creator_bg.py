@@ -23,7 +23,7 @@ data_download_url = os.environ.get('DATA_DOWNLOAD_URL', config.get("datapipeline
 rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RABBIT_MQ_HOST"))
 
 
-@background(queue="create_pipeline")
+#@background(queue="create_pipeline")
 def create_pipeline(post_data, p_id):
     """ Asynchronous task to create pipeline using the request received from the API """
     p = Pipeline.objects.get(pk=p_id)
