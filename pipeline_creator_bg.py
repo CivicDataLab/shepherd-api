@@ -58,7 +58,7 @@ def create_pipeline(post_data, p_id):
             p.resource_identifier = res_id
             p.save()
             if not data.empty:
-                data.to_csv(temp_file_name)
+                data.to_csv(temp_file_name, index=False)
         except Exception as e:
             data = None
             p.status = "Failed"

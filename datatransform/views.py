@@ -422,5 +422,5 @@ def custom_data_viewer(request):
         print(final_df)
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=export.csv"
-        final_df.to_csv(path_or_buf=response)  # with other applicable parameters
+        final_df.to_csv(path_or_buf=response, index=False)  # with other applicable parameters
         return response

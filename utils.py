@@ -48,7 +48,7 @@ def upload_resource(res_dict):
     resource_name = res_dict['resource_name']
     data = res_dict['data']
 
-    data.to_csv('data110.csv')
+    data.to_csv('data110.csv', index=False)
     file_path = 'data110.csv'
 
     # Create Resource

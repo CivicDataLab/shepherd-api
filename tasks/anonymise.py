@@ -11,7 +11,7 @@ def anonymize(data: pd.DataFrame):
     df_updated = data[col].str.replace(re.compile(to_replace, re.IGNORECASE), val)
     df_updated = df_updated.to_frame()
     data[col] = df_updated[col]
-    data.to_csv('anonymised.csv')
+    data.to_csv('anonymised.csv', index=False)
 
 
 data = pd.read_csv('E:\git\my_try\shepherd-api\data110.csv')

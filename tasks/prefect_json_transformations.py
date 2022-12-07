@@ -195,7 +195,7 @@ def change_format(context, pipeline, task_obj):
     dir = "format_changed_files/"
     json_str = json.dumps(pipeline.data)
     json_data = pd.read_json(json_str, orient="index")
-    csv_data = json_data.to_csv()
+    csv_data = json_data.to_csv(index=False)
     if file_format == "csv" or file_format =="CSV":
         try:
             with open(dir+result_file_name + '.csv', 'w') as f:
