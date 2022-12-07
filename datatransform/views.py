@@ -15,6 +15,30 @@ import json
 import uuid
 
 
+def api_transformer_list(request):
+    """ returns list of transformations for api based resources with
+    required input fields to the front-end """
+    transformers = [
+        {
+            "name": "skip_column",
+            "context": [
+                {
+                    "name": "columns",
+                    "type": "field_multi",
+                    "desc": "Please select column names to be deleted",
+                }
+            ],
+        },
+        {
+            "name": "change_format",
+            "context": [{"name": "format", "type": "formatfield_single",
+                         "desc": "Please select the format to which the resource needs to be changed"}],
+        }
+    ]
+    context = {"result": transformers, "Success": True}
+    return JsonResponse(context, safe=False)
+
+
 def transformer_list(request):
     """ returns list of transformations with required input fields to the front-end """
     transformers = [
@@ -60,7 +84,8 @@ def transformer_list(request):
         },
         {
             "name": "change_format",
-            "context": [{"name": "format", "type": "formatfield_single", "desc": "Please select the format to which the resource needs to be changed"}],
+            "context": [{"name": "format", "type": "formatfield_single",
+                         "desc": "Please select the format to which the resource needs to be changed"}],
         },
         {
             "name": "anonymize",
@@ -156,10 +181,10 @@ def pipe_list(request):
     for each in task_data:
         p = Pipeline.objects.get(pk=each["Pipeline_id_id"])
         res_url = (
-            "https://ndp.ckan.civicdatalab.in/dataset/"
-            + p.output_id
-            + "/resource/"
-            + each["output_id"]
+                "https://ndp.ckan.civicdatalab.in/dataset/"
+                + p.output_id
+                + "/resource/"
+                + each["output_id"]
         )
 
         if each["Pipeline_id_id"] not in data:
@@ -369,7 +394,6 @@ def api_source_query(request):
         target_format = post_data.get("target_format", "")
         print("0", post_data)
         try:
-
             pipeline_object = list(
                 Pipeline.objects.filter(resource_identifier=api_source_id)
             )[-1]

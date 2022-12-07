@@ -36,6 +36,20 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print(" got pipeline id...", pipeline_id)
         print("data before,,,%%%", data)
+        if res_details == "api_res":
+            # if it's API resource need to execute all the tasks at once.
+            tasks = pipeline_object.task_set.all().order_by("order_no")
+
+            def execution_from_model(task):
+                new_pipeline.add(task)
+
+            [execution_from_model(task) for task in tasks]
+            if file_format.lower() == "csv":
+                prefect_tasks.pipeline_executor(new_pipeline)
+                return new_pipeline.data
+            elif file_format.lower() == "json":
+                prefect_json_transformations.json_pipeline_executor(new_pipeline)
+                return new_pipeline.data
 
         task = list(pipeline_object.task_set.all().order_by("order_no"))[-1]
 
@@ -49,12 +63,7 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
         #     new_pipeline.add(task)
 
         # [execution_from_model(task) for task in tasks]
-        if res_details == "api_res" and file_format.lower() == "csv":
-            prefect_tasks.pipeline_executor(new_pipeline)
-            return new_pipeline.data
-        elif res_details == "api_res" and file_format == "JSON":
-            prefect_json_transformations.json_pipeline_executor(new_pipeline)
-            return new_pipeline.data
+
         new_pipeline.schema = res_details['data']['resource']['schema']
 
         if file_format == "CSV":
