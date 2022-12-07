@@ -104,7 +104,7 @@ def json_keep_column(data, cols, parentnodes):
 
         for each in parentnodes:
             node_path = [x for x in each.split('.') if x != "" and x != "." and "items" not in x]
-            parent_dict[node_path[-1]] = node_path[-2] if len(node_path)>=2 else node_path[-1]
+            parent_dict[node_path[-1]] = node_path[-2] if len(node_path)>=2 else ""
         return keep_col(data, "", cols, parent_dict)
     except Exception as e:
         raise e
