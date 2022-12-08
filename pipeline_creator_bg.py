@@ -123,7 +123,7 @@ def create_pipeline(post_data, p_id):
                          f"{res_id} - {str(e)}")
         finally:
             files[0][1][1].close()
-            # os.remove(file_path)
+            os.remove(file_path)
     else:
         pass
     pipe_action = post_data.get('pipe_action')
