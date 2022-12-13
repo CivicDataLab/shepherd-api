@@ -9,7 +9,7 @@ from utils import update_resource, create_resource
 
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
-def task_executor(pipeline_id, data_pickle, res_details, db_action):
+def task_executor(pipeline_id, data_pickle):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
     data = Pipeline.objects.get(pk=pipeline_id)
@@ -26,12 +26,9 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action):
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
 
-        # for i in tasks:
-        #     print(i.task_name)
         def execution_from_model(task):
             new_pipeline.add(task)
 
-        new_pipeline.schema = res_details['data']['resource']['schema']
         [execution_from_model(task) for task in tasks]
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         # if db_action == "update":

@@ -2,8 +2,6 @@ import pika
 import requests
 from background_task.models import CompletedTask
 
-from pipeline.api_resource_query_bg import api_resource_query_task
-import pipeline_creator_bg
 from .models import Task, Pipeline
 # Create your views here.
 
@@ -92,18 +90,12 @@ def pipe_list(request):
 
 def pipe_create(request):
     if request.method == 'POST':
-
-        # print("enter")
-        # print(request.body)
-
         post_data = json.loads(request.body.decode('utf-8'))
         print("#####", post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
-        org_name = post_data.get('org_name', None)
-        pipeline_name = post_data.get('name', '')
-        print("*******", transformers_list)
-        # print(data_url, transformers_list)
+        pipeline_name = post_data.get('pipeline_name', '')
+
         transformers_list = [i for i in transformers_list if i]
         try:
             data = read_data(data_url)
@@ -112,7 +104,6 @@ def pipe_create(request):
 
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
-        # p.output_id = upload_dataset(pipeline_name, org_name)
         p.save()
 
         p_id = p.pk
@@ -148,64 +139,5 @@ def pipe_create(request):
 
 def read_data(data_url):
     all_data = pd.read_csv(data_url)
-    all_data.fillna(value="", inplace=True)
 
     return all_data
-
-
-def res_transform(request):
-    if request.method == 'POST':
-        post_data = json.loads(request.body.decode('utf-8'))
-        pipeline_name = post_data.get('pipeline_name', None)
-        pipeline_creator_bg.create_pipeline(post_data, pipeline_name)
-        completed_tasks_qs = CompletedTask.objects.all()
-        print(completed_tasks_qs)
-        context = {"result": pipeline_name, "Success": True}
-        return JsonResponse(context, safe=False)
-
-
-def api_source_query(request):
-    if request.method == 'GET':
-        api_source_id = request.GET.get('api_source_id', None)
-        request_id = request.GET.get('request_id', None)
-        pipeline_name = api_source_id + "-" + str(uuid.uuid4())
-        p = Pipeline(status="Created", pipeline_name=pipeline_name)
-        p.save()
-
-        p_id = p.pk
-        api_resource_query_task(p_id, api_source_id, request_id)
-
-        context = {"result": p_id, "Success": True}
-        return JsonResponse(context, safe=False)
-
-
-def custom_data_viewer(request):
-    if request.method == 'POST':
-        post_data = json.loads(request.body.decode('utf-8'))
-        print("data received..", post_data)
-        res_id = post_data.get('res_id')
-        columns = post_data.get('columns')
-        num_rows = post_data.get('rows')
-        # print(data_url, columns, num_rows)
-        data_url = "http://idpbe.civicdatalab.in/download/" + str(res_id)
-        try:
-            data = read_data(data_url)
-        except Exception as e:
-            data = None
-        # if no columns specified, return whole dataframe
-        if len(columns) == 0:
-            column_selected_df = data
-        else:
-            column_selected_df = data.loc[:, data.columns.isin(columns)]
-        # if row length is not specified return all rows
-        if num_rows == "" or int(num_rows) > len(column_selected_df):
-            final_df = column_selected_df
-        else:
-            num_rows_int = int(num_rows)
-            final_df = column_selected_df.iloc[:num_rows_int]
-
-        print(final_df)
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=export.csv'
-        final_df.to_csv(path_or_buf=response)  # with other applicable parameters
-        return response
