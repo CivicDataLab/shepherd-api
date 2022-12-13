@@ -6,6 +6,11 @@ from config import settings
 import pandas as pd
 from tasks import prefect_tasks, prefect_json_transformations
 from utils import update_resource, create_resource
+import requests
+from configparser import ConfigParser
+config = ConfigParser()
+
+config.read("config.ini")
 
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
@@ -82,6 +87,16 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
                  "logger": new_pipeline.logger})
+            
+            api_schema_url = os.environ.get('BACKEND_URL', config.get("datapipeline", "BACKEND_URL"))  + "api_schema/" + str(res_details['data']['resource']['id']) +  "/"
+            new_schema_resp = requests.get(api_schema_url)
+            new_schema = new_schema_resp.json()
+            new_schema = new_schema["schema"]           
+            
+            update_resource(
+                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
+                 "logger": new_pipeline.logger})            
         if db_action == "create":
             for sc in new_pipeline.schema:
                 sc.pop('id', None)
