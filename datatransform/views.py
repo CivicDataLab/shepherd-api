@@ -30,10 +30,26 @@ def api_transformer_list(request):
             ],
         },
         {
-            "name": "change_format",
-            "context": [{"name": "format", "type": "formatfield_single",
-                         "desc": "Please select the format to which the resource needs to be changed"}],
-        }
+            "name": "anonymize",
+            "context": [
+                {
+                    "name": "column",
+                    "type": "field_single",
+                    "desc": "Please select column name to perform operation",
+                },
+                {
+                    "name": "option",
+                    "type": "option_single",
+                    "desc": "Choose an option to anonymize",
+                },
+                {
+                    "name": "special_char",
+                    "type": "special_char_single",
+                    "desc": "Choose a special character",
+                },
+                {"name": "n", "type": "n_type", "desc": "Please enter the value of n"},
+            ],
+        },        
     ]
     context = {"result": transformers, "Success": True}
     return JsonResponse(context, safe=False)
@@ -390,6 +406,7 @@ def api_source_query(request):
         api_source_id = str(post_data.get("api_source_id", None))
         request_id = post_data.get("request_id", None)
         request_columns = post_data.get("request_columns", "")
+        remove_nodes = post_data.get("remove_nodes", [])
         request_rows = post_data.get("request_rows", "")
         target_format = post_data.get("target_format", "")
         print("0", post_data)
@@ -409,6 +426,7 @@ def api_source_query(request):
             api_source_id,
             request_id,
             request_columns,
+            remove_nodes,
             request_rows,
             target_format,
         )
