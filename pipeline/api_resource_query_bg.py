@@ -288,8 +288,8 @@ def api_resource_query_task(
         else:
             filtered_data = transformed_data
         with open(file_name + "-data.json", "w") as f:
-            json.dump(filtered_data, f)
-            # f.write(filtered_data)
+            #json.dump(filtered_data, f)
+            f.write(str(filtered_data))
             file_path = file_name + "-data.json"
     if response_type.lower() == "csv" and len(errors) == 0:
         print(api_response)
