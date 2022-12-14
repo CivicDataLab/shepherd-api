@@ -77,7 +77,7 @@ def create_resource(res_dict):
     schema = res_dict['schema']
     schema = json.dumps(schema)
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
-        '"description":', 'description:')
+            '"description":', 'description:').replace('"display_name":', 'display_name:').replace('"parent":', 'parent:').replace('"array_field":', 'array_field:').replace('"path":', 'path:').replace('"parent_path":', 'parent_path:')
     res_name_for_file = res_dict['resource_name']
     description = res_details['data']['resource']['description']
     logger = res_dict['logger']
@@ -157,7 +157,7 @@ def update_resource(res_dict):
     schema = res_dict['schema']
     schema = json.dumps(schema)
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
-        '"description":', 'description:')
+            '"description":', 'description:').replace('"display_name":', 'display_name:').replace('"parent":', 'parent:').replace('"array_field":', 'array_field:').replace('"path":', 'path:').replace('"parent_path":', 'parent_path:')
     logger = res_dict['logger']
     res_name_for_file = res_dict['resource_name']
     dir = "format_changed_files/"
