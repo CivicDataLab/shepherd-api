@@ -1,0 +1,34 @@
+version: "3.9"
+services:
+  db:
+    image: "postgres:14.4"
+    restart: always
+    container_name: "pipeline_postgres"
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  web:
+    build: .
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432   
+    container_name: "idp_pipeline"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8007:8000"
+    depends_on:
+      - db
+volumes:
+  postgres_data:
+    name: idp_pipeline_postgres_data
