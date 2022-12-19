@@ -99,7 +99,7 @@ def transformer_list(request):
             ],
         },
         {
-            "name": "change_format",
+            "name": "change_format_to_pdf",
             "context": [{"name": "format", "type": "formatfield_single",
                          "desc": "Change the format to PDF"}],
         },

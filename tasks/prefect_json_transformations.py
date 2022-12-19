@@ -206,7 +206,7 @@ def merge_columns(context, pipeline, task_obj):
 
 
 @task(name="json_change_format")
-def change_format(context, pipeline, task_obj):
+def change_format_to_pdf(context, pipeline, task_obj):
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
     dir = "format_changed_files/"

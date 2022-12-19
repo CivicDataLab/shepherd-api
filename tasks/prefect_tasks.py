@@ -155,7 +155,7 @@ def anonymize(context, pipeline, task_obj):
 
 
 @task
-def change_format(context, pipeline, task_obj):
+def change_format_to_pdf(context, pipeline, task_obj):
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
     dir = "format_changed_files/"
