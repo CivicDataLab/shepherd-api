@@ -68,7 +68,7 @@ def json_keep_column(data, cols, parentnodes):
             parent_dict[node_path[-1]] = node_path[-2] if len(node_path)>=2 else ""
         return keep_col(data, "", cols, parent_dict)
     except Exception as e:
-        raise e
+        print ('-----', str(e))
         return data
 
 
@@ -283,13 +283,14 @@ def api_resource_query_task(
         # print("--------------------jsonparse", data, "----", request_columns)
         if len(request_columns) > 0:
             # filtered_data = json_keep_column(data, request_columns)
+            transformed_data = json.loads(transformed_data) if isinstance(transformed_data, str) else transformed_data
             filtered_data = json_keep_column(transformed_data, request_columns, remove_nodes)
             print("-----------------fltrddata", filtered_data)
         else:
             filtered_data = transformed_data
         with open(file_name + "-data.json", "w") as f:
-            json.dump(filtered_data, f)
-            # f.write(filtered_data)
+            #json.dump(filtered_data, f)
+            f.write(str(filtered_data))
             file_path = file_name + "-data.json"
     if response_type.lower() == "csv" and len(errors) == 0:
         print(api_response)

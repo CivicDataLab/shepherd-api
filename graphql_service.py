@@ -51,6 +51,14 @@ def resource_query(res_id, access_token=None):
           key
           format
           description
+          path
+          parent {{
+          key
+          }}
+          parent_path
+          array_field {{
+          key
+          }}
         }}
         file_details {{
           format

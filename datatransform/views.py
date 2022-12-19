@@ -195,7 +195,10 @@ def pipe_list(request):
 
     data = {}
     for each in task_data:
-        p = Pipeline.objects.get(pk=each["Pipeline_id_id"])
+        try:
+            p = Pipeline.objects.get(pk=each["Pipeline_id_id"])
+        except Exception as e:
+            continue
         res_url = (
                 "https://ndp.ckan.civicdatalab.in/dataset/"
                 + p.output_id

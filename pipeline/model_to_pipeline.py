@@ -6,6 +6,11 @@ from config import settings
 import pandas as pd
 from tasks import prefect_tasks, prefect_json_transformations
 from utils import update_resource, create_resource
+import requests
+from configparser import ConfigParser
+config = ConfigParser()
+
+config.read("config.ini")
 
 mod = __import__('tasks', fromlist=settings.tasks.values())
 
@@ -78,10 +83,31 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                 if len(schema['key']) != 0:
                     fresh_schema.append(schema)
             new_pipeline.schema = fresh_schema
+            print ('--------------------------------update1 start')
             update_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
                  "logger": new_pipeline.logger})
+            
+            print ('-------------------------------update1 end and schema change start', str(res_details['data']['resource']['id']))
+            try:
+                api_schema_url = os.environ.get('BACKEND_URL', config.get("datapipeline", "BACKEND_URL"))  + "api_schema/" + str(res_details['data']['resource']['id']) +  "/"
+                print (api_schema_url)
+                new_schema_resp = requests.get(api_schema_url)
+                print (new_schema_resp)
+                new_schema = new_schema_resp.json()
+                print (new_schema)
+                new_schema = new_schema["schema"]         
+                print ('----new schem', new_schema)
+            except Exception as e:
+                print ('------------error', str(e))
+                raise e
+            
+            update_resource(
+                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
+                 "logger": new_pipeline.logger})
+            print ('-------------------------------update2 end and schema change end') 
         if db_action == "create":
             for sc in new_pipeline.schema:
                 sc.pop('id', None)
@@ -97,6 +123,22 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
                  "logger": new_pipeline.logger}
             )
+            
+            print ('-------------------------------update2 start and schema change start') 
+            api_schema_url = os.environ.get('BACKEND_URL', config.get("datapipeline", "BACKEND_URL"))  + "api_schema/" + str(id) +  "/"
+            new_schema_resp = requests.get(api_schema_url)
+            new_schema = new_schema_resp.json()
+            new_schema = new_schema["schema"]          
+            print ('----new schem', new_schema) 
+           
+            res_details['data']['resource']['id'] = id 
+            update_resource(
+                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
+                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
+                 "logger": new_pipeline.logger}) 
+
+            print ('-------------------------------update2 end and schema change end') 
+
             new_pipeline.model.resultant_res_id = id
             new_pipeline.model.save()
             print("res_id created at...", id)
