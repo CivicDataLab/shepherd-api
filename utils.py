@@ -158,6 +158,7 @@ def update_resource(res_dict):
     schema = json.dumps(schema)
     schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
             '"description":', 'description:').replace('"display_name":', 'display_name:').replace('"parent":', 'parent:').replace('"array_field":', 'array_field:').replace('"path":', 'path:').replace('"parent_path":', 'parent_path:')
+    print("*****", schema)
     logger = res_dict['logger']
     res_name_for_file = res_dict['resource_name']
     dir = "format_changed_files/"

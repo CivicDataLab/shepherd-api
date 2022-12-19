@@ -79,10 +79,30 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
             raise Exception("There was an error while running the pipeline")
         if db_action == "update":
             fresh_schema = []
-            for schema in new_pipeline.schema:
-                if len(schema['key']) != 0:
-                    fresh_schema.append(schema)
+            for each in new_pipeline.schema:
+                if len(each['key']) == 0:
+                    continue
+                    # fresh_schema.append(schema)
+                if each['parent']:
+                    each['parent'] = each['parent']['key']
+                else:
+                    each['parent'] = ""
+                if each['array_field']:
+                    each['array_field'] = each['array_field']['key']
+                else:
+                    each['array_field'] = ""
+                if each['path']:
+                    each['path'] = each['path']
+                else:
+                    each['path'] = ""
+                if each['parent_path']:
+                    each['parent_path'] = each['parent_path']
+                else:
+                    each['parent_path'] = ""
+                fresh_schema.append(each)
+
             new_pipeline.schema = fresh_schema
+
             print ('--------------------------------update1 start')
             update_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
