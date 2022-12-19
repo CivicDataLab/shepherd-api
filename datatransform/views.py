@@ -101,7 +101,7 @@ def transformer_list(request):
         {
             "name": "change_format",
             "context": [{"name": "format", "type": "formatfield_single",
-                         "desc": "Please select the format to which the resource needs to be changed"}],
+                         "desc": "Change the format to PDF"}],
         },
         {
             "name": "anonymize",
