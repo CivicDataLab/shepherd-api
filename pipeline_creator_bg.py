@@ -102,6 +102,14 @@ def create_pipeline(post_data, p_id):
                 each['array_field'] = each['array_field']['key']
             else:
                 each['array_field'] = ""
+            if each['path']:
+                each['path'] = each['path']
+            else:
+                each['path'] = ""
+            if each['parent_path']:
+                each['parent_path'] = each['parent_path']
+            else:
+                each['parent_path'] = ""                                
             schema1.append(each)
         schema = json.dumps(schema1)
         schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
