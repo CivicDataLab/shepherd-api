@@ -110,24 +110,25 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                  "logger": new_pipeline.logger})
             
             print ('-------------------------------update1 end and schema change start', str(res_details['data']['resource']['id']))
-            try:
-                api_schema_url = os.environ.get('BACKEND_URL', config.get("datapipeline", "BACKEND_URL"))  + "api_schema/" + str(res_details['data']['resource']['id']) +  "/"
-                print (api_schema_url)
-                new_schema_resp = requests.get(api_schema_url)
-                print (new_schema_resp)
-                new_schema = new_schema_resp.json()
-                print (new_schema)
-                new_schema = new_schema["schema"]         
-                print ('----new schem', new_schema)
-            except Exception as e:
-                print ('------------error', str(e))
-                raise e
-            
-            update_resource(
-                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
-                 "logger": new_pipeline.logger})
-            print ('-------------------------------update2 end and schema change end') 
+            if task.task_name != "change_format_to_pdf":
+                try:
+                    api_schema_url = os.environ.get('BACKEND_URL', config.get("datapipeline", "BACKEND_URL"))  + "api_schema/" + str(res_details['data']['resource']['id']) +  "/"
+                    print (api_schema_url)
+                    new_schema_resp = requests.get(api_schema_url)
+                    print (new_schema_resp)
+                    new_schema = new_schema_resp.json()
+                    print (new_schema)
+                    new_schema = new_schema["schema"]
+                    print ('----new schem', new_schema)
+                except Exception as e:
+                    print ('------------error', str(e))
+                    raise e
+
+                update_resource(
+                    {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
+                     'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
+                     "logger": new_pipeline.logger})
+                print ('-------------------------------update2 end and schema change end')
         if db_action == "create":
             for sc in new_pipeline.schema:
                 sc.pop('id', None)
