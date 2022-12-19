@@ -94,10 +94,18 @@ def create_pipeline(post_data, p_id):
         schema1= []
         for each in schema:
             del each['id']
+            if each['parent']:
+                each['parent'] = each['parent']['key']
+            else:
+                each['parent'] = ""
+            if each['array_field']:
+                each['array_field'] = each['array_field']['key']
+            else:
+                each['array_field'] = ""
             schema1.append(each)
         schema = json.dumps(schema1)
         schema = schema.replace('"id":', 'id:').replace('"key":', 'key:').replace('"format":', 'format:').replace(
-            '"description":', 'description:')
+                '"description":', 'description:').replace('"parent":', 'parent:').replace('"path":', 'path:').replace('"parent_path":', 'parent_path:').replace('"array_field":', 'array_field:')
         org_id = response['data']['resource']['dataset']['catalog']['organization']['id']
         file_path = resource_name + "." + str(file_format).lower()
         # copying the data to the file with same title as resource
