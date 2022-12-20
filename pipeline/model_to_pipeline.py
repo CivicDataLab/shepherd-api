@@ -31,24 +31,6 @@ def task_executor(pipeline_id, data_pickle):
 
         [execution_from_model(task) for task in tasks]
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
-        # if db_action == "update":
-        #     update_resource(
-        #     {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-        #      'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema})
-        # if db_action == "create":
-        #     print("scs after popping...\n")
-        #     for sc in new_pipeline.schema:
-        #         sc.pop('id', None)
-        #
-        #     for schema in new_pipeline.schema:
-        #         # if found a schema with no key, no need to use it while creating
-        #         if len(schema.get("key")) == 0:
-        #             new_pipeline.schema.remove(schema)
-        #     id = create_resource(
-        #         {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-        #          'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema}
-        #     )
-        #     print("res_id created at...",id)
         return
 
     except Exception as e:

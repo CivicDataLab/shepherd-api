@@ -36,17 +36,6 @@ def skip_column(context, pipeline, task_obj):
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-        column = context['columns']
-        col = column
-        if not isinstance(column, list):
-            column = list()
-            column.append(col)
-        for col in column:
-            for sc in pipeline.schema:
-                        if sc['key'] == col:
-                            sc['key'] = ""
-                            sc['format'] = ""
-                            sc['description'] = ""
 
         set_task_model_values(task_obj, pipeline)
 
@@ -73,25 +62,6 @@ def merge_columns(context, pipeline, task_obj):
         print("data received in prefect...", df)
         print(df.columns)
 
-        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
-        names_types_dict = data_schema.dtypes.astype(str).to_dict()
-        new_col_format = names_types_dict[output_column]
-        for sc in pipeline.schema:
-            if sc['key'] == column1:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-            if sc['key'] == column2:
-                sc['key'] = ""
-                sc['format'] = ""
-                sc['description'] = ""
-        pipeline.schema.append({
-            "key": output_column, "format": new_col_format,
-            "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
-                           + pipeline.model.pipeline_name
-        })
-        print(pipeline.schema)
         set_task_model_values(task_obj, pipeline)
 
 
@@ -112,14 +82,7 @@ def anonymize(context, pipeline, task_obj):
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-        col = context['column']
-        data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                                   convert_integer=True, convert_boolean=True, convert_floating=True)
-        names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
-        for sc in pipeline.schema:
-            if sc['key'] == col:
-                sc['format'] = names_types_dict[col]
         set_task_model_values(task_obj, pipeline)
 
 
@@ -164,20 +127,7 @@ def aggregate(context, pipeline, task_obj):
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-        inferred_schema = build_table_schema(pipeline.data)
-        fields = inferred_schema['fields']
-        new_schema = []
-        for field in fields:
-            key = field['name']
-            description = ""
-            format = field['type']
-            for sc in pipeline.schema:
-                if sc['key'] == key or sc['key'] == key[0]:
-                    description = sc['description']
-            if isinstance(key, tuple):
-                key = " ".join(map(str, key))
-            new_schema.append({"key": key, "format": format, "description": description})
-        pipeline.schema = new_schema
+
         set_task_model_values(task_obj, pipeline)
 
 
@@ -203,9 +153,6 @@ def query_data_resource(context, pipeline, task_obj):
         final_df = column_selected_df.iloc[:num_rows_int]
     pipeline.data = final_df
 
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
     set_task_model_values(task_obj, pipeline)
 

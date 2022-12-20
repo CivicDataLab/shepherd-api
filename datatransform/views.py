@@ -12,8 +12,6 @@ import uuid
 
 
 def transformer_list(request):
-    #field_single
-    # field_multi
     transformers = [
         {"name": "skip_column", "context": [
             {"name": "columns", "type": "field_multi", "desc": "Please select column names to be deleted"}]},
