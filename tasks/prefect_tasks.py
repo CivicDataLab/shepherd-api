@@ -70,7 +70,7 @@ def merge_columns(context, pipeline, task_obj):
                     sc['format'] = ""
                     sc['description'] = ""
         pipeline.schema.append({
-            "key": output_column, "format": new_col_format,
+            "key": output_column, "format": new_col_format,"parent": "", "array_field":"", "path":"", "parent_path":"",
             "description": "Result of merging columns " + column1 + " & " + column2 + " by pipeline - "
                            + pipeline.model.pipeline_name
         })
