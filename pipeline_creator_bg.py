@@ -82,6 +82,23 @@ def create_pipeline(post_data, p_id):
             p.status = "Failed"
             p.err_msg = str(e)
             p.save()
+    elif file_format == "XML":
+        try:
+            data = read_xml_data(data_url)
+            p = Pipeline.objects.get(pk=p_id)
+            p.status = "Created"
+            logger.info(f"INFO: Pipeline created")
+            p.resource_identifier = res_id
+            p.save()
+            temp_file_name = temp_file_name + ".xml"
+            with open(temp_file_name, "w") as outfile:
+                outfile.write(data)
+
+        except Exception as e:
+            data = None
+            p.status = "Failed"
+            p.err_msg = str(e)
+            p.save()            
     # if to create a new res, create a copy of existing resource
     if db_action == "create":
         if new_res_name is not None:
@@ -175,3 +192,7 @@ def read_data(data_url):
 def read_json_data(data_url):
     data_response = requests.get(data_url)
     return data_response.json()
+
+def read_xml_data(data_url):
+    data_response = requests.get(data_url)
+    return data_response.text

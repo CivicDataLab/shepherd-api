@@ -335,7 +335,7 @@ def api_resource_query_task(
             file_path = file_name + "-data.csv"
     if response_type.lower() == "xml" and len(errors) == 0:
 
-        temp_file_name = uuid.uuid4().hex + ".json"
+        temp_file_name = uuid.uuid4().hex + ".xml"
         if p_id is not None:
             logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
             logger.info("INFO: Received API resource with pre-saved pipeline details")
