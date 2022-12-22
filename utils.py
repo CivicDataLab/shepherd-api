@@ -133,6 +133,22 @@ def create_resource(res_dict):
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
         ]
+    elif init_file_format == "XML":
+        file_path = resource_name + ".xml"
+        file_format = "XML"
+        with open(resource_name+".xml", "w") as outfile:
+            outfile.write(data)
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'text/xml'))
+        ]    
+    else:
+        file_path = resource_name + ".txt"
+        file_format = "TXT"
+        with open(resource_name+".txt", "w") as outfile:
+            outfile.write(data)
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'text/txt'))
+        ]         
     try:
         response_json = graphql_service.create_resource(resource_name,description, schema, file_format, files, org_id,
                                                         dataset_id)
@@ -210,8 +226,24 @@ def update_resource(res_dict):
         with open(resource_name+".json", "w") as outfile:
             outfile.write(json_object)
         files = [
-            ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
+            ('0', (file_path, open(file_path, 'rb'), 'text/json'))
         ]
+    elif init_file_format == "XML":
+        file_path = resource_name + ".xml"
+        file_format = "XML"
+        with open(resource_name+".xml", "w") as outfile:
+            outfile.write(data)
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'text/xml'))
+        ]    
+    else:
+        file_path = resource_name + ".txt"
+        file_format = "TXT"
+        with open(resource_name+".txt", "w") as outfile:
+            outfile.write(data)
+        files = [
+            ('0', (file_path, open(file_path, 'rb'), 'text/txt'))
+        ]     
     try:
         response_json = graphql_service.update_resource(res_details, file_format, schema, files, org_id)
         logger.info(f"INFO: Updated the resource. Response is - {response_json}")
