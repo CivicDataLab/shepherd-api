@@ -114,8 +114,9 @@ def pipe_create(request):
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
         temp_file_name = uuid.uuid4().hex
-        if not data.empty:
-            data.to_pickle(temp_file_name)
+        if data is not None:
+            if not data.empty:
+                data.to_pickle(temp_file_name)
         message_body = {
             'p_id': p_id,
             'temp_file_name': temp_file_name,

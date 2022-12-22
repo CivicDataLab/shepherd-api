@@ -20,69 +20,34 @@ from io import StringIO
 
 @task
 def skip_column(context, pipeline, task_obj):
-    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
-    try:
-        data_bytes = task_publisher.call()  # this will be a csv of bytes type
-    except Exception as e:
-        send_error_to_prefect_cloud(e)
-    data = str(data_bytes.decode("utf-8"))
-    print("data in prefect..", data)
-    if data.startswith("Worker failed with an error -"):
-        print("found err msg", data)
-        send_error_to_prefect_cloud(Exception(data))
-        task_obj.status = "Failed"
-        task_obj.save()
-    else:
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-
+        print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
-
 
 
 @task
 def merge_columns(context, pipeline, task_obj):
-    print("in prefect merge_cols..")
-    column1, column2, output_column = context['column1'], context['column2'], context['output_column']
-    separator = context['separator']
-
-    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
-    data_bytes = task_publisher.call()  # this will be a csv of bytes type
-    data = data_bytes.decode("utf-8")
-    # If it's an error that was encountered by worker, then send it to prefect cloud and set task status to failed
-    if data.startswith("Worker failed with an error -"):
-        send_error_to_prefect_cloud(Exception(data))
-        task_obj.status = "Failed"
-        task_obj.save()
-    else:
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-        print("data received in prefect...", df)
-        print(df.columns)
-
+        print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
 
 
 @task
 def anonymize(context, pipeline, task_obj):
-    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
-    try:
-        data_bytes = task_publisher.call()  # this will be a csv of bytes type
-    except Exception as e:
-        send_error_to_prefect_cloud(e)
-    data = str(data_bytes.decode("utf-8"))
-    print("data in prefect..", data)
-    if data.startswith("Worker failed with an error -"):
-        send_error_to_prefect_cloud(Exception(data))
-        task_obj.status = "Failed"
-        task_obj.save()
-    else:
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-
+        print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
 
 
@@ -92,7 +57,7 @@ def change_format(context, pipeline, task_obj):
     file_format = context['format']
     result_file_name = pipeline.model.pipeline_name
     print("FORMAAAAAAT", file_format)
-    if file_format == "xml" or file_format =="XML":
+    if file_format == "xml" or file_format == "XML":
         data_string = pipeline.data.to_json(orient='records')
         json_data = json.loads(data_string)
         xml_data = json2xml.Json2xml(json_data).to_xml()
@@ -112,24 +77,13 @@ def change_format(context, pipeline, task_obj):
 
 @task
 def aggregate(context, pipeline, task_obj):
-    task_publisher = TasksRpcClient(task_obj.task_name, context, pipeline.data.to_json())
-    try:
-        data_bytes = task_publisher.call()  # this will be a csv of bytes type
-    except Exception as e:
-        send_error_to_prefect_cloud(e)
-    data = str(data_bytes.decode("utf-8"))
-    print("data in prefect..", data)
-    if data.startswith("Worker failed with an error -"):
-        send_error_to_prefect_cloud(Exception(data))
-        task_obj.status = "Failed"
-        task_obj.save()
-    else:
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-
+        print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
-
 
 @task
 def query_data_resource(context, pipeline, task_obj):
@@ -153,8 +107,18 @@ def query_data_resource(context, pipeline, task_obj):
         final_df = column_selected_df.iloc[:num_rows_int]
     pipeline.data = final_df
 
+    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+                                               convert_integer=True, convert_boolean=True, convert_floating=True)
+    names_types_dict = data_schema.dtypes.astype(str).to_dict()
 
     set_task_model_values(task_obj, pipeline)
+
+@task
+def fill_missing_fields(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
+        print(data, "???")
+
 
 
 @flow

@@ -88,3 +88,25 @@ class TasksRpcClient(object):
             body=json.dumps(message))
         self.connection.process_data_events(time_limit=None)
         return self.response
+
+
+def publish_task_and_process_result(task_obj, context, data):
+    if data is not None: # if scraper task then data will be None
+        data = data.to_json()
+    task_publisher = TasksRpcClient(task_obj.task_name, context, data)
+    try:
+        data_bytes = task_publisher.call()  # this will be a csv of bytes type
+        data = str(data_bytes.decode("utf-8"))
+        print(data, "******")
+    except Exception as e:
+        print(str(e), "&&&&&&&")
+        send_error_to_prefect_cloud(e)
+    print("data in prefect..", data)
+    exception_flag = False
+    if data.startswith("Worker failed with an error -"):
+        print("found err msg", data)
+        send_error_to_prefect_cloud(Exception(data))
+        task_obj.status = "Failed"
+        task_obj.save()
+        exception_flag = True
+    return data, exception_flag

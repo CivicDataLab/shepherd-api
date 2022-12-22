@@ -25,7 +25,7 @@ def task_executor(pipeline_id, data_pickle):
         tasks = pipeline_object.task_set.all().order_by("order_no")
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
-
+        print("data before...", new_pipeline.data)
         def execution_from_model(task):
             new_pipeline.add(task)
 

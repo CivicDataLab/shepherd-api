@@ -36,3 +36,10 @@ Following are the steps to be followed to add a new task to the pipeline.
 1. Define your task name and the context (i.e. necessary information to perform the task).
 2. Write the task(i.e. your Python function) in [prefect_tasks](tasks/prefect_tasks.py) file as a prefect task. 
  Note: Prefect task is a Python function annotated with `@task`. Make sure you have the same arguments passed to your function as other tasks defined in the file.
+3. The very first two lines in the task remain same for all the tasks. i.e. the following:
+  
+``data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)  
+  if not exception_flag:``
+ These lines publish your task along with the context and the data in the queue. After that write post-processing script. i.e. what you want to do with data.
+4. Write the worker's logic in a separate file under [scripts](tasks/scripts) directory. Use the existing `template.py`
+to write the worker.
