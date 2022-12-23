@@ -40,10 +40,16 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
             if isinstance(data, str):
                 data = json.loads(data)
         elif file_format.lower() == "xml":
-            f = open(data_pickle, "rb")
-            data = xmltodict.parse(f.read())
-            f.close()
-            os.remove(data_pickle)               
+            #f = open(data_pickle, "rb")
+            #data = xmltodict.parse(f.read())
+            #f.close()
+            try:
+                data =  pd.read_xml(data_pickle)
+                data =  data.to_dict("records")
+                os.remove(data_pickle)
+            except Exception as e:
+                print ('----error', str(e))
+                raise e
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print(" got pipeline id...", pipeline_id)
@@ -86,8 +92,12 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
         elif file_format.lower() == "json":
             prefect_json_transformations.json_pipeline_executor(new_pipeline)
         elif file_format.lower() == "xml":
-            prefect_json_transformations.json_pipeline_executor(new_pipeline)    
-            new_pipeline.data = dicttoxml.dicttoxml(new_pipeline.data)        
+            prefect_json_transformations.json_pipeline_executor(new_pipeline)   
+            #print ('----------------data after task orig', new_pipeline.data)
+            new_pipeline.data = (json.dumps(new_pipeline.data))#dicttoxml.dicttoxml(new_pipeline.data)      
+            new_pipeline.data = (pd.read_json(new_pipeline.data))
+            new_pipeline.data = (new_pipeline.data).to_xml(index=False)
+            #print ('----------------data after task xml', new_pipeline.data)
         if new_pipeline.model.status == "Failed":
             raise Exception("There was an error while running the pipeline")
         if db_action == "update":

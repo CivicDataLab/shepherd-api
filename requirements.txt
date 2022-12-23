@@ -89,3 +89,4 @@ websocket-client==1.4.1
 yarl==1.8.1
 xmltodict==0.13.0
 dicttoxml==1.7.11
+lxml==4.9.2
