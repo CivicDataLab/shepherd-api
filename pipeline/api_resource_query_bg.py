@@ -334,7 +334,24 @@ def api_resource_query_task(
             final_df.to_csv(file_name + "-data.csv", index=False)
             file_path = file_name + "-data.csv"
     if response_type.lower() == "xml" and len(errors) == 0:
-        data_dict = xmltodict.parse(api_response)
+
+        temp_file_name = uuid.uuid4().hex + ".xml"
+        if p_id is not None:
+            logger = log_utils.set_log_file(p_id, "api_resource_pipeline")
+            logger.info("INFO: Received API resource with pre-saved pipeline details")
+            with open(temp_file_name, "w") as outfile:
+                outfile.write(api_response)
+            pipeline_obj = Pipeline.objects.get(pk=p_id)
+            pipeline_obj.dataset_id = response['data']['resource']['dataset']['id']
+            pipeline_obj.save()
+            transformed_data = task_executor(p_id, temp_file_name, "api_res", "", "XML")
+            data_dict = transformed_data
+            print("^^^^", type(transformed_data))
+        else:
+            data_dict = xmltodict.parse(api_response)
+        print("--------datafromapi", transformed_data)
+        
+        
         print("-----------dict", data_dict, "-----------", request_columns)
         if len(request_columns) > 0:
             filtered_data = json_keep_column(data_dict, request_columns, remove_nodes)
