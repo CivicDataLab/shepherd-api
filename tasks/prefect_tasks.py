@@ -233,7 +233,8 @@ def aggregate(context, pipeline, task_obj):
                     description = sc['description']
             if isinstance(key, tuple):
                 key = "-".join(map(str, key))
-            new_schema.append({"key": key, "format": format, "description": description})
+            new_schema.append({"key": key, "format": format, "description": description,
+                               "parent": "", "array_field":"", "path":"", "parent_path":""})
         pipeline.schema = new_schema
         pipeline.logger.info(f"INFO: task - aggregate is done.")
         set_task_model_values(task_obj, pipeline)

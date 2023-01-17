@@ -1,25 +1,28 @@
-import pandas as pd
-import json
+import os
+import sys
 
-def get_parent_key(json_data, fields_list):
-    str_data = json.dumps(json_data)
-    json_data = json.loads(str_data.__dict__)
-
-    for item in json_data:
-        print("item is...", item, " and the type is....", type(item))
-        item = json.load(item)
-        print("type is now...", type(item))
-        if isinstance(item, list):
-            print("item keys are-----", item[0].keys())
-        if isinstance(item, list) and fields_list in [item[0].keys()]:
-            return item
+import pika
 
 
+def main():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    channel = connection.channel()
 
-with open('data.json') as f:
-    d = json.load(f)
-parent = get_parent_key(d, ["d", "initiationtype"])
-print(parent)
+    channel.queue_declare(queue='pipeline_ui_queue')
 
-# df = pd.read_csv("bos2021ModC.csv")
-# print(df.drop("level", axis=1))
+    def callback(ch, method, properties, body):
+        print("Recieved..",body)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue='pipeline_ui_queue', on_message_callback=callback)
+
+    channel.start_consuming()
+try:
+    main()
+except KeyboardInterrupt:
+    print('Interrupted')
+    try:
+        sys.exit(0)
+    except SystemExit:
+        os._exit(0)
