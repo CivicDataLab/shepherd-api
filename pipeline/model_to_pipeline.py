@@ -125,8 +125,6 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                 fresh_schema.append(each)
 
             new_pipeline.schema = fresh_schema
-
-            print ('--------------------------------update1 start')
             update_resource(
                 {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
                  'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
@@ -152,40 +150,6 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                      'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
                      "logger": new_pipeline.logger})
                 print ('-------------------------------update2 end and schema change end')
-        if db_action == "create":
-            for sc in new_pipeline.schema:
-                sc.pop('id', None)
-
-            fresh_schema = []
-            for schema in new_pipeline.schema:
-                # if found a schema with no key, no need to use it while creating
-                if len(schema['key']) != 0:
-                    fresh_schema.append(schema)
-            new_pipeline.schema = fresh_schema
-            id = create_resource(
-                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_pipeline.schema,
-                 "logger": new_pipeline.logger}
-            )
-            
-            print ('-------------------------------update2 start and schema change start') 
-            api_schema_url = os.environ.get('BACKEND_URL', config.get("datapipeline", "BACKEND_URL"))  + "api_schema/" + str(id) +  "/"
-            new_schema_resp = requests.get(api_schema_url)
-            new_schema = new_schema_resp.json()
-            new_schema = new_schema["schema"]          
-            print ('----new schem', new_schema) 
-           
-            res_details['data']['resource']['id'] = id 
-            update_resource(
-                {'package_id': new_pipeline.model.output_id, 'resource_name': new_pipeline.model.pipeline_name,
-                 'res_details': res_details, 'data': new_pipeline.data, 'schema': new_schema,
-                 "logger": new_pipeline.logger}) 
-
-            print ('-------------------------------update2 end and schema change end') 
-
-            new_pipeline.model.resultant_res_id = id
-            new_pipeline.model.save()
-            print("res_id created at...", id)
         return
 
     except Exception as e:

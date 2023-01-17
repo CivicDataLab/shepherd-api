@@ -217,20 +217,28 @@ def aggregate(context, pipeline, task_obj):
     index = context['index']
     columns = context['columns']
     values = context['values']
+    index = index.split(",")
     columns = columns.split(",")
     values = values.split(",")
+    none_list = [None]
+    for col in columns:
+        none_list.append(col)
     try:
         pipeline.data = pd.pivot_table(pipeline.data, index=index, columns=columns, values=values, aggfunc='count')
+        pipeline.data = pipeline.data.rename_axis(none_list, axis=1)
+        pipeline.data = pipeline.data.reset_index()
         inferred_schema = build_table_schema(pipeline.data)
         fields = inferred_schema['fields']
         new_schema = []
         for field in fields:
             key = field['name']
             description = ""
-            format = "integer"
+            format = field['type']
             for sc in pipeline.schema:
                 if sc['key'] == key or sc['key'] == key[0]:
                     description = sc['description']
+            if key == "index" or key == "":
+                continue
             if isinstance(key, tuple):
                 key = "-".join(map(str, key))
             new_schema.append({"key": key, "format": format, "description": description,

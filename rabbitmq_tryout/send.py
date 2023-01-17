@@ -60,6 +60,7 @@
 # if isinstance(data, dict):
 #     data[op_col_name] = merged
 # print(data, "data..")
+import csv
 import json
 
 import pandas as pd
@@ -87,15 +88,27 @@ import pdfkit
 # pdata = skip_col(data, "gender")
 # print(pdata)
 import pandas as pd
+from pandas.io.json import build_table_schema
 
-index = "country"
-columns = "state"
-values = "city"
-data = pd.read_csv("punjab_aqi.csv")
+index = ["name"]
+columns = ["sub", "id"]
+values = ["class"]
+data = pd.read_csv("test1.csv")
 agged = pd.pivot_table(data, index=index, columns=columns, values=values, aggfunc='count')
-print(agged)
-
-
+# agged.columns = agged.columns.to_flat_index()
+none_list = [None]
+for i in columns:
+    none_list.append(i)
+print(type(agged.columns))
+agged = agged.rename_axis(none_list, axis=1)
+agged = agged.reset_index()
+print(agged, "after....")
+file_path = "test.csv"
+print(type(agged.columns))
+agged.to_csv("test.csv", index=True)
+inferred_schema = build_table_schema(agged)
+fields = inferred_schema['fields']
+print(fields)
 
 
 

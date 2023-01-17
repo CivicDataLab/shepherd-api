@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import random
@@ -179,6 +180,7 @@ def update_resource(res_dict):
     res_name_for_file = res_dict['resource_name']
     dir = "format_changed_files/"
     file_path = dir + res_name_for_file
+    print(init_file_format, "------")
     if os.path.isfile(file_path + ".json"):
         file_path = file_path + ".json"
         file_format = "JSON"
@@ -207,14 +209,16 @@ def update_resource(res_dict):
         file_path = file_path + ".csv"
         file_format = "CSV"
         os.rename(file_path, resource_name + ".csv")
-        file_path = resource_name + ".csv"
         files = [
             ('0', (resource_name + ".csv", open(resource_name + ".csv", 'rb'), 'csv'))
         ]
 
-    elif init_file_format == "CSV":
-        data.to_csv(resource_name + ".csv", index=False)
+    elif init_file_format.lower() == "csv":
         file_path = resource_name + ".csv"
+        if isinstance(data.columns, pd.core.indexes.multi.MultiIndex):
+            data.to_csv(file_path, index=True)
+        else:
+            data.to_csv(file_path, index=False)
         file_format = "CSV"
         files = [
             ('0', (file_path, open(file_path, 'rb'), 'text/csv'))
