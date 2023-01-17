@@ -91,7 +91,7 @@ import pandas as pd
 from pandas.io.json import build_table_schema
 
 index = ["name"]
-columns = ["sub", "id"]
+columns = ["sub"]
 values = ["class"]
 data = pd.read_csv("test1.csv")
 agged = pd.pivot_table(data, index=index, columns=columns, values=values, aggfunc='count')

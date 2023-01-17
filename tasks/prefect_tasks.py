@@ -179,7 +179,7 @@ def change_format_to_pdf(context, pipeline, task_obj):
             task_obj.save()
     elif file_format == "pdf" or file_format == "PDF":
         try:
-            pipeline.data.to_html("data.html")
+            pipeline.data.to_html("data.html", index=False)
             pdfkit.from_file("data.html", dir+result_file_name + ".pdf")
             os.remove('data.html')
             pipeline.logger.info(f"INFO: Resource format changed to pdf")
