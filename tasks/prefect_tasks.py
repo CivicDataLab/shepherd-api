@@ -120,6 +120,12 @@ def fill_missing_fields(context, pipeline, task_obj):
         print(data, "???")
 
 
+@task
+def sample_scraper(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
+        print("HERE IS S3 LINK------", data)
+
 
 @flow
 def pipeline_executor(pipeline):

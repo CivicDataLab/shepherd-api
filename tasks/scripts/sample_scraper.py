@@ -3,6 +3,7 @@ import pandas as pd
 import pika
 import requests
 from bs4 import BeautifulSoup
+from s3_utils import *
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -43,10 +44,13 @@ def on_request(ch, method, props, body):
         else:
             response_msg = response
             print(response_msg)
+            with open("sample_scraper.txt", "wb") as f:
+                f.write(str(response_msg.text))
+            s3_link = upload_result("sample_scraper.txt")
         ch.basic_publish(exchange="",
                          routing_key=props.reply_to,
                          properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
-                         body=str(response_msg))
+                         body=str(s3_link))
         ch.basic_ack(delivery_tag=method.delivery_tag)
         print("[x] sent the response to the client..")
     except Exception as e:
