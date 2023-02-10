@@ -66,6 +66,8 @@ def anonymize(context, pipeline, task_obj):
                     print("got change key..")
                     val = d[key]
                     print("value type is...", type(val))
+                    if isinstance(val, int) or isinstance(val, float):
+                        val = str(val)
                     if isinstance(val, str):
                         if option == "replace_all":
                             if special_char == "random":
