@@ -148,3 +148,58 @@ def update_resource(res_details, file_format, schema, files, org_id, access_toke
         return response_json
     except:
         return None
+
+
+@get_sys_token
+def get_dataset(dataset_id, access_token=None):
+    query = f"""
+    {{
+    dataset(dataset_id: {dataset_id}) {{
+    id
+    title
+    description
+    update_frequency
+    modified
+    status
+    funnel
+    action
+    dataset_type
+    download_count
+    language
+    in_series
+    theme
+    qualified_attribution
+    contact_point
+    confirms_to
+    spatial_coverage
+    spatial_resolution
+    temporal_resolution
+    temporal_coverage
+    accepted_agreement
+    resource_set{{
+    id
+    title
+    description
+    }}
+    datasetaccessmodel_set{{
+      id
+      issued
+      modified
+    }}
+    additionalinfo_set {{
+      id
+      title
+      description
+      issued
+    }}
+    slug
+    average_rating
+  }}
+    }}
+    """
+    headers = {"Authorization": access_token}  # {"Authorization": "Bearer YOUR API KEY"}
+    try:
+        request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
+    except Exception as e:
+        print(str(e))
+    return json.loads(request.text)

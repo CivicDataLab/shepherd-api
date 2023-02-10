@@ -5,14 +5,15 @@ option = "replace_all"
 special_char = "*"
 n = "2"
 
+
+
 def anonymize_a_key(d, change_key):
     for key in list(d.keys()):
         if key == change_key:
             print("got change key..")
             val = d[key]
             print("value type is...", type(val))
-            if isinstance(val, int) or isinstance(val, float):
-                print("it is INT")
+            if isinstance(val, int):
                 val = str(val)
             if isinstance(val, str):
                 if option == "replace_all":
@@ -32,6 +33,7 @@ def anonymize_a_key(d, change_key):
                     # else:
                     #     replace_val = val[0:int(n)] + special_char + val[int(n) + 1:]
                     #     d[key] = replace_val
+                    # n = context.get('n')
                     n = int(n)  # - 1
                     if special_char == "random":
                         replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
@@ -56,7 +58,11 @@ def anonymize_a_key(d, change_key):
                     else:
                         replace_val = val[:int(n)] + (special_char * (len(val) - int(n)))
                         d[key] = replace_val
+            else:
+                anonymize_col(d[key], change_key)
         else:
+            print("in else")
+            print(d[key])
             anonymize_col(d[key], change_key)
 
 
@@ -64,15 +70,20 @@ def anonymize_col(d, change_key):
     if isinstance(d, dict):
         anonymize_a_key(d, change_key)
     if isinstance(d, list):
+        print("here as I got list")
         for each in d:
             if isinstance(each, dict):
                 anonymize_a_key(each, change_key)
+
 
     return d
 
 data_file = open("data.json")
 data = json.load(data_file)
-final = anonymize_col(data, "Temperature_Maximum")
-json_obj = json.dumps(final)
-with open("transformed.json", "w") as f:
-    f.write(json_obj)
+data_str = json.dumps(data)
+data = json.loads(data_str)
+final_d = anonymize_col(data, "order")
+json_obj = json.dumps(final_d)
+print("writing")
+with open("transformed.json", "w") as outfile:
+    outfile.write(json_obj)
