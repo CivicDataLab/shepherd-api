@@ -158,33 +158,20 @@ def get_dataset(dataset_id, access_token=None):
     id
     title
     description
-    update_frequency
-    modified
-    status
-    funnel
-    action
-    dataset_type
-    download_count
     language
-    in_series
-    theme
-    qualified_attribution
-    contact_point
-    confirms_to
+    period_from
+    period_to
     spatial_coverage
     spatial_resolution
-    temporal_resolution
-    temporal_coverage
-    accepted_agreement
+    hvd_rating
     resource_set{{
     id
     title
     description
     }}
-    datasetaccessmodel_set{{
-      id
-      issued
-      modified
+    tags{{
+    id
+    name
     }}
     additionalinfo_set {{
       id
@@ -200,6 +187,49 @@ def get_dataset(dataset_id, access_token=None):
     headers = {"Authorization": access_token}  # {"Authorization": "Bearer YOUR API KEY"}
     try:
         request = requests.post(graph_ql_url, json={'query': query}, headers=headers)
+        return json.loads(request.text)
     except Exception as e:
         print(str(e))
-    return json.loads(request.text)
+        return None
+
+
+def get_all_datasets(access_token=None):
+    try:
+        url = "https://dev.backend.idp.civicdatalab.in/facets/?size=1000"
+        request = requests.get(url)
+        response = request.json()
+        # print(response)
+    except Exception as e:
+        print(str(e))
+
+    return response["hits"]["hits"]
+
+@get_sys_token
+def patch_dataset(dataset_id, hvd_rating, access_token = None):
+    query = f"""
+        mutation{{
+            patch_dataset(dataset_data: {{
+                id: {dataset_id}
+                hvd_rating:{hvd_rating}
+            }}
+            )
+        {{
+            success
+            errors
+            dataset{{
+                id
+                }}
+            }}
+        }}
+    """
+    print(query)
+    headers = {"Authorization": access_token}
+    try:
+        response = requests.post(graph_ql_url, json={'query': query}, headers=headers)
+        print(response)
+        response_json = json.loads(response.text)
+        print(response_json)
+        return response_json
+    except Exception as e:
+        print(e)
+        return None
