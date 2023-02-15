@@ -10,7 +10,7 @@ __pycache__/
 orion.db
 sqlite*
 db2.s*
-rabbitmq_tryout/*
+rabbitmq_tryout
 
 
 # Distribution / packaging

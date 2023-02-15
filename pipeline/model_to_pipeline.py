@@ -12,14 +12,16 @@ mod = __import__('tasks', fromlist=settings.tasks.values())
 def task_executor(pipeline_id, data_pickle):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
-    data = Pipeline.objects.get(pk=pipeline_id)
     try:
         data = None
         try:
-            data = pd.read_pickle(data_pickle)
-            os.remove(data_pickle)
-        except:
+            data = pd.read_csv(data_pickle)
+            print(data)
+        except Exception as e:
+            print(str(e), "error in model to pipeline!!!!!")
             pass
+        finally:
+            os.remove(data_pickle)
         print(" got pipeline id...", pipeline_id)
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
         tasks = pipeline_object.task_set.all().order_by("order_no")

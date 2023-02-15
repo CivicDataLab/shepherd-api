@@ -98,6 +98,7 @@ def pipe_create(request):
         try:
             data = read_data(data_url)
         except Exception as e:
+            print(str(e), "&&&&&&&")
             data = None
 
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
@@ -116,7 +117,7 @@ def pipe_create(request):
         temp_file_name = uuid.uuid4().hex
         if data is not None:
             if not data.empty:
-                data.to_pickle(temp_file_name)
+                data.to_csv(temp_file_name)
         message_body = {
             'p_id': p_id,
             'temp_file_name': temp_file_name,

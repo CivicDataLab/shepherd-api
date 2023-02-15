@@ -42,7 +42,7 @@ def populate_db(context, data):
     db_name = context["db_name"]
     table_name = context["table_name"]
     data = pd.read_json(data)
-    get_connection_object(dbms_name=dbms_name, host=host, user_name=user_name,
+    engine = get_connection_object(dbms_name=dbms_name, host=host, user_name=user_name,
                                password=password, db_name=db_name, port=port)
     try:
       data.to_sql(table_name, engine, if_exists='append', index=False)
@@ -79,25 +79,3 @@ channel.basic_consume(queue=queue_name, on_message_callback=on_request)
 print(" [x] Awaiting RPC requests")
 
 channel.start_consuming()
-
-
-
-
-
-
-
-
-
-engine = get_connection_object(dbms_name='sqlite', host='127.0.0.1', user_name='ecourts',
-                               password='admin', db_name='data_pipeline', port='5433')
-df = pd.read_csv('sample.csv')
-df.to_sql('marks', engine, if_exists='replace', index=False)
-print("done!!")
-
-# DB_HOST = '127.0.0.1'
-# DB_PORT = '5433'
-# DB_USER = 'ecourts'
-# DB_PASS = 'admin'
-# DB_NAME = 'ecourts'
-# DBMS_NAME = 'postgresql'
-# DB_DRIVER = 'psycopg2'

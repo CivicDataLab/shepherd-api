@@ -127,6 +127,14 @@ def sample_scraper(context, pipeline, task_obj):
         print("HERE IS S3 LINK------", data)
 
 
+@task
+def db_loader(context, pipeline, task_obj):
+    # data = pipeline.data.to_json()
+    print(pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
+        print("data loaded in db")
+
 @flow
 def pipeline_executor(pipeline):
     print("setting ", pipeline.model.pipeline_name, " status to In Progress")

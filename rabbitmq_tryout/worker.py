@@ -1,7 +1,4 @@
-import numpy as np
 import pandas as pd
-
-
-data = pd.read_csv("sample.csv")
-t_data = data.fillna({"col1":np.NAN})
-print(t_data)
+data_url = "https://cdn.wsform.com/wp-content/uploads/2020/06/county_uk.csv"
+all_data = pd.read_csv(data_url)
+print(all_data)
