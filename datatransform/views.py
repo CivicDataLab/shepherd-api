@@ -4,6 +4,7 @@ from background_task.models import CompletedTask
 
 import log_utils
 from pipeline.api_resource_query_bg import api_resource_query_task
+from pipeline.api_res_run_transform_task import api_res_run_transform_task
 import pipeline_creator_bg
 from .models import Task, Pipeline
 
@@ -401,6 +402,35 @@ def api_res_transform(request):
 
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
+
+def api_res_run_transform(request):
+    
+    if request.method == "POST":
+        post_data = json.loads(request.body.decode("utf-8"))
+        api_source_id = str(post_data.get("api_source_id", None))
+        api_data_params = post_data.get("api_data_params", {})
+        print("0", post_data)
+        try:
+            pipeline_object = list(
+                Pipeline.objects.filter(resource_identifier=api_source_id)
+            )[-1]
+            print("got an obj")
+            p_id = getattr(pipeline_object, "pipeline_id")
+        except Exception as e:
+            print(str(e))
+            print("3---")
+            p_id = None
+        resp_data, response_type = api_res_run_transform_task(
+            p_id,
+            api_source_id,
+            api_data_params
+        )
+
+        context = {"Success": True, "data": resp_data, "response_type": response_type}
+        return JsonResponse(context, safe=False)
+    
+ 
+
 
 
 def api_source_query(request):
