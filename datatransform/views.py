@@ -420,11 +420,15 @@ def api_res_run_transform(request):
             print(str(e))
             print("3---")
             p_id = None
-        resp_data, response_type = api_res_run_transform_task(
+
+        try:    
+            resp_data, response_type = api_res_run_transform_task(
             p_id,
             api_source_id,
             api_data_params
         )
+        except Exception as e:
+            print (str(e))
 
         context = {"Success": True, "data": resp_data, "response_type": response_type}
         return JsonResponse(context, safe=False)

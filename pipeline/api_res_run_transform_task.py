@@ -118,7 +118,6 @@ def api_res_run_transform_task(
     request_type = response["data"]["resource"]["api_details"]["request_type"]
     format_loc = response["data"]["resource"]["api_details"]["format_loc"]
     format_key = response["data"]["resource"]["api_details"]["format_key"]
-
     param = {}
     header = {}
     if auth_type == "TOKEN":
@@ -155,8 +154,7 @@ def api_res_run_transform_task(
             param.update({format_key: target_format})
 
     response_type = response["data"]["resource"]["api_details"]["response_type"]
-    target_format = response["data"]["resource"]["api_details"]["default_format"]
-    
+    target_format = response["data"]["resource"]["api_details"]["response_type"]
     for each in response["data"]["resource"]["api_details"]["apiparameter_set"]:
         print("---each", each)
         param.update({each["key"]: each["default"]})    
