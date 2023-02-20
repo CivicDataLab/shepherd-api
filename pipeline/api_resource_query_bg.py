@@ -349,7 +349,7 @@ def api_resource_query_task(
             print("^^^^", type(transformed_data))
         else:
             data_dict = xmltodict.parse(api_response)
-        print("--------datafromapi", transformed_data)
+        #print("--------datafromapi", transformed_data)
         
         
         print("-----------dict", data_dict, "-----------", request_columns)
