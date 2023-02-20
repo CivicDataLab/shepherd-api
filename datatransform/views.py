@@ -403,6 +403,14 @@ def api_res_transform(request):
         return JsonResponse(context, safe=False)
 
 
+def delete_api_res_transform(request):
+    if request.method == "POST":
+        post_data = json.loads(request.body.decode("utf-8"))
+        pipeline_id = post_data.get("pipeline_id", None)
+        Pipeline.objects.filter(pipeline_id=pipeline_id).delete()
+        context = {"Success": True}
+        return JsonResponse(context, safe=False)
+
 def api_source_query(request):
     if request.method == "POST":
         post_data = json.loads(request.body.decode("utf-8"))
