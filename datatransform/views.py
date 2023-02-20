@@ -50,7 +50,7 @@ def api_transformer_list(request):
                 },
                 {"name": "n", "type": "n_type", "desc": "Please enter the value of n"},
             ],
-        },        
+        },
     ]
     context = {"result": transformers, "Success": True}
     return JsonResponse(context, safe=False)
@@ -403,8 +403,16 @@ def api_res_transform(request):
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
+def delete_api_res_transform(request):
+    if request.method == "POST":
+        post_data = json.loads(request.body.decode("utf-8"))
+        pipeline_id = post_data.get("pipeline_id", None)
+        Pipeline.objects.filter(pipeline_id=pipeline_id).delete()
+        context = {"Success": True}
+        return JsonResponse(context, safe=False)
+
+
 def api_res_run_transform(request):
-    
     if request.method == "POST":
         post_data = json.loads(request.body.decode("utf-8"))
         api_source_id = str(post_data.get("api_source_id", None))
@@ -421,14 +429,14 @@ def api_res_run_transform(request):
             print("3---")
             p_id = None
 
-        try:    
+        try:
             resp_data, response_type = api_res_run_transform_task(
-            p_id,
-            api_source_id,
-            api_data_params
-        )
+                p_id,
+                api_source_id,
+                api_data_params
+            )
         except Exception as e:
-            print (str(e))
+            print(str(e))
 
         #print ('*****', resp_data)
 
@@ -439,9 +447,6 @@ def api_res_run_transform(request):
 
         context = {"Success": True, "data": resp_data, "response_type": response_type}
         return JsonResponse(context, safe=False)
-    
- 
-
 
 
 def api_source_query(request):
