@@ -438,6 +438,13 @@ def api_res_run_transform(request):
         except Exception as e:
             print(str(e))
 
+        #print ('*****', resp_data)
+
+        if response_type.lower() == "csv":
+            resp_data = resp_data.to_dict('records') #string(index=False)
+
+        #print ('------111----', resp_data)
+
         context = {"Success": True, "data": resp_data, "response_type": response_type}
         return JsonResponse(context, safe=False)
 

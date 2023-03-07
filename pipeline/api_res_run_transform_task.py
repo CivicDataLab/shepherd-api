@@ -86,6 +86,7 @@ def api_res_run_transform_task(
             key
             default
         }}
+      default_format  
       auth_required
       url_path
       response_type
@@ -147,6 +148,8 @@ def api_res_run_transform_task(
         elif auth_type == "CREDENTIAL":
             param = {uname_key: uname, pwd_key: pwd}
 
+    target_format = response["data"]["resource"]["api_details"]["default_format"] 
+
     if format_key and format_key != "":
         if format_loc == "HEADER":
             header.update({format_key: target_format})
@@ -154,7 +157,7 @@ def api_res_run_transform_task(
             param.update({format_key: target_format})
 
     response_type = response["data"]["resource"]["api_details"]["response_type"]
-    target_format = response["data"]["resource"]["api_details"]["response_type"]
+    # target_format = response["data"]["resource"]["api_details"]["response_type"]
     for each in response["data"]["resource"]["api_details"]["apiparameter_set"]:
         print("---each", each)
         param.update({each["key"]: each["default"]})    

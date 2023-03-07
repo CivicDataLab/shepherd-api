@@ -46,7 +46,7 @@ def json_keep_column(data, cols, parentnodes):
                 child_keys_list = []
                 get_child_keys(d[key], child_keys_list)
                 print ('--------------', key, '---', child_keys_list)
-                if (key not in remove_key or parent!=parent_dict.get(key, "")) and not any([ item in remove_key for item in child_keys_list]):
+                if (key.lower() not in remove_key or parent.lower()!=parent_dict.get(key, "").lower()) and not any([ item.lower() in remove_key for item in child_keys_list]):
                     del d[key]
                 else:
                     keep_col(d[key], key, remove_key, parent_dict)
@@ -66,6 +66,7 @@ def json_keep_column(data, cols, parentnodes):
         for each in parentnodes:
             node_path = [x for x in each.split('.') if x != "" and x != "." and "items" not in x]
             parent_dict[node_path[-1]] = node_path[-2] if len(node_path)>=2 else ""
+        cols = [x.lower() for x in cols]
         return keep_col(data, "", cols, parent_dict)
     except Exception as e:
         print ('-----', str(e))
@@ -289,8 +290,8 @@ def api_resource_query_task(
         else:
             filtered_data = transformed_data
         with open(file_name + "-data.json", "w") as f:
-            #json.dump(filtered_data, f)
-            f.write(str(filtered_data))
+            json.dump(filtered_data, f)
+            # f.write(str(filtered_data))
             file_path = file_name + "-data.json"
     if response_type.lower() == "csv" and len(errors) == 0:
         print(api_response)
@@ -321,6 +322,8 @@ def api_resource_query_task(
                     }
                 )
             else:
+                request_columns = [x.lower() for x in request_columns]
+                transformed_data.columns = [x.lower() for x in transformed_data.columns]  
                 column_selected_df = transformed_data.loc[
                     :, transformed_data.columns.isin(request_columns)
                 ]
@@ -349,7 +352,7 @@ def api_resource_query_task(
             print("^^^^", type(transformed_data))
         else:
             data_dict = xmltodict.parse(api_response)
-        print("--------datafromapi", transformed_data)
+        #print("--------datafromapi", transformed_data)
         
         
         print("-----------dict", data_dict, "-----------", request_columns)
