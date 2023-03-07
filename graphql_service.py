@@ -161,6 +161,7 @@ def get_dataset(dataset_id, access_token=None):
     language
     period_from
     period_to
+    update_frequency
     spatial_coverage
     spatial_resolution
     hvd_rating
@@ -168,6 +169,12 @@ def get_dataset(dataset_id, access_token=None):
     id
     title
     description
+    filedetails{{
+    format
+    }}
+    apidetails{{
+    default_format
+    }}
     }}
     tags{{
     id
@@ -179,7 +186,6 @@ def get_dataset(dataset_id, access_token=None):
       description
       issued
     }}
-    slug
     average_rating
   }}
     }}
