@@ -11,7 +11,7 @@ config = ConfigParser()
 config.read("config.ini")
 
 graph_ql_url = os.environ.get('GRAPH_QL_URL', config.get("datapipeline", "GRAPH_QL_URL"))
-
+all_dataset_url = os.environ.get('ALL_DATASETS_URL', config.get("datapipeline", "ALL_DATASETS_URL"))
 
 @get_sys_token
 def resource_query(res_id, access_token=None):
@@ -159,11 +159,8 @@ def get_dataset(dataset_id, access_token=None):
     title
     description
     language
-    period_from
-    period_to
+    published_date
     update_frequency
-    spatial_coverage
-    spatial_resolution
     hvd_rating
     resource_set{{
     id
@@ -186,7 +183,11 @@ def get_dataset(dataset_id, access_token=None):
       description
       issued
     }}
+    datasetratings_set{{
+    id
+    }}
     average_rating
+    download_count 
   }}
     }}
     """
@@ -201,8 +202,7 @@ def get_dataset(dataset_id, access_token=None):
 
 def get_all_datasets(access_token=None):
     try:
-        url = "https://dev.backend.idp.civicdatalab.in/facets/?size=1000"
-        request = requests.get(url)
+        request = requests.get(all_dataset_url)
         response = request.json()
         # print(response)
     except Exception as e:
