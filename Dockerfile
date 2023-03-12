@@ -26,7 +26,6 @@ RUN chmod +x rabbit.sh
 RUN /code/rabbit.sh
 
 
-
 RUN pip install -r requirements.txt
 RUN pip install psycopg2-binary
 RUN python manage.py migrate

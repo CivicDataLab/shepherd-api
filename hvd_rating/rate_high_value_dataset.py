@@ -165,6 +165,7 @@ def get_rating_and_update_dataset(params_json=default_params_json):
                                               "Downloads per month rating", "Total Rating"])
 
     for dataset_id in dataset_ids:
+        
         rating_list = []
         response = graphql_service.get_dataset(dataset_id)
         print(response)
@@ -227,12 +228,25 @@ def get_rating_and_update_dataset(params_json=default_params_json):
         send_info_to_prefect_cloud(log_string)
         patch_dataset(dataset_id, round(sum(rating_list), 1))
     ratings_file_name = "Rating_details.csv"
-    destination_file = 'E:/git/my_try/shepherd-api/Rating_details.csv'
     rating_details_df.to_csv(ratings_file_name, index=False)
+    try:
+        # with open('Rating_details.csv', 'r') as file:
+        #     print (file.read())
+        
+        email_url =  os.environ.get('EMAIL_URL', config.get("datapipeline", "EMAIL_URL"))
+        headers = {}
+        files = {'file': open('Rating_details.csv', 'rb')}   
+        response = requests.request("POST", email_url, headers=headers, files=files)
+        response_json = response.text
+        print ('------mail response', response_json)
+    except Exception as e:
+        raise
+        print(str(e))
 
-    if os.path.isfile(ratings_file_name):
-        shutil.copyfile(ratings_file_name, destination_file)
-        print("File copied successfully!")
+    # destination_file = 'E:/git/my_try/shepherd-api/Rating_details.csv'
+    # if os.path.isfile(ratings_file_name):
+    #     shutil.copyfile(ratings_file_name, destination_file)
+    #     print("File copied successfully!")
 
 
 if __name__ == "__main__":
