@@ -1,6 +1,6 @@
 #!/bin/bash
 
-prefect orion start &>/dev/null & 
+prefect orion start --host 0.0.0.0 &>/dev/null & 
 prefect deployment build hvd_rating/rate_high_value_dataset.py:get_rating_and_update_dataset -n rate_hvd -t dev &>/dev/null &
 prefect deployment apply get_rating_and_update_dataset-deployment.yaml &>/dev/null &
 rabbitmq-server start &>/dev/null & 

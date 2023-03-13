@@ -410,6 +410,35 @@ def delete_api_res_transform(request):
         Pipeline.objects.filter(pipeline_id=pipeline_id).delete()
         context = {"Success": True}
         return JsonResponse(context, safe=False)
+    
+def clone_pipe(request):
+    if request.method == "POST":
+        post_data = json.loads(request.body.decode("utf-8"))
+        pipeline_id = post_data.get("pipeline_id", None)
+        dataset_id = post_data.get("dataset_id", None)
+        resource_id = post_data.get("resource_id", None)
+        resultant_res_id = post_data.get("resultant_res_id", None)
+        
+        pipe_clone = Pipeline.objects.get(pipeline_id=pipeline_id)
+        pipe_clone.pk = None
+        setattr(pipe_clone, 'dataset_id', dataset_id)
+        setattr(pipe_clone, 'resource_identifier', resource_id)
+        setattr(pipe_clone, 'resultant_res_id', resultant_res_id)
+        pipe_clone.save()
+        
+        
+        Tasks = Tasks.objects.filter(Pipeline_id=pipeline_id)
+        for task in Tasks:
+            task_clone = Task.objects.get(task_id=task.task_id)
+            task_clone.pk = None
+        
+            setattr(task_clone, 'Pipeline_id', pipe_clone.pk)
+            task_clone.save()
+        
+        
+                
+        context = {"Success": True}
+        return JsonResponse(context, safe=False)
 
 
 def api_res_run_transform(request):
