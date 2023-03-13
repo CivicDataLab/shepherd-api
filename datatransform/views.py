@@ -414,6 +414,7 @@ def delete_api_res_transform(request):
 def clone_pipe(request):
     if request.method == "POST":
         post_data = json.loads(request.body.decode("utf-8"))
+        #print ('---------------------clonedata', post_data)
         pipeline_id = post_data.get("pipeline_id", None)
         dataset_id = post_data.get("dataset_id", None)
         resource_id = post_data.get("resource_id", None)
@@ -427,12 +428,12 @@ def clone_pipe(request):
         pipe_clone.save()
         
         
-        Tasks = Tasks.objects.filter(Pipeline_id=pipeline_id)
-        for task in Tasks:
+        tasks = Task.objects.filter(Pipeline_id=pipeline_id)
+        for task in tasks:
             task_clone = Task.objects.get(task_id=task.task_id)
             task_clone.pk = None
         
-            setattr(task_clone, 'Pipeline_id', pipe_clone.pk)
+            setattr(task_clone, 'Pipeline_id', pipe_clone)
             task_clone.save()
         
         
