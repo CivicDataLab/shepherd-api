@@ -44,8 +44,12 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
             #data = xmltodict.parse(f.read())
             #f.close()
             try:
-                data =  pd.read_xml(data_pickle)
-                data =  data.to_dict("records")
+                f = open(data_pickle, "rb")
+                data = xmltodict.parse(f.read())
+                f.close()
+
+                #data =  pd.read_xml(data_pickle)
+                #data =  data.to_dict("records")
                 os.remove(data_pickle)
             except Exception as e:
                 print ('----error', str(e))

@@ -34,8 +34,8 @@ def json_keep_column(data, cols, parentnodes):
             if isinstance(d,  dict):
                 for key in list(d.keys()):
                     child_keys_list.append(key)
-                    if isinstance(d[key], dict):
-                        get_child_keys(d[key], child_keys_list)  
+                    #if isinstance(d[key], dict):
+                    get_child_keys(d[key], child_keys_list)  
             if isinstance(d,  list):
                 for each in d:
                     if isinstance(each,  dict):
@@ -45,8 +45,9 @@ def json_keep_column(data, cols, parentnodes):
             for key in list(d.keys()):
                 child_keys_list = []
                 get_child_keys(d[key], child_keys_list)
-                print ('--------------', key, '---', child_keys_list)
-                if (key.lower() not in remove_key or parent.lower()!=parent_dict.get(key, "").lower()) and not any([ item.lower() in remove_key for item in child_keys_list]):
+                #print ('--------------', key, '---', child_keys_list)
+                #if (key.lower() not in remove_key or parent.lower()!=parent_dict.get(key, "").lower()) and not any([ item.lower() in remove_key for item in child_keys_list]):
+                if (key.lower() not in remove_key) and not any([ item.lower() in remove_key for item in child_keys_list]):
                     del d[key]
                 else:
                     keep_col(d[key], key, remove_key, parent_dict)
