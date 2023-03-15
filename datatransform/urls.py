@@ -15,5 +15,6 @@ urlpatterns = [
     path('api_res_transform', csrf_exempt(views.api_res_transform), name='api_res_transform'),
     path('api_res_run_transform', csrf_exempt(views.api_res_run_transform), name='api_res_run_transform'),
     path('api_transformer_list', csrf_exempt(views.api_transformer_list), name='api_transformer_list'),
-    path('delete_api_res_transform', csrf_exempt(views.delete_api_res_transform), name='delete_api_res_transform')
+    path('delete_api_res_transform', csrf_exempt(views.delete_api_res_transform), name='delete_api_res_transform'),
+    path('clone_pipe', csrf_exempt(views.clone_pipe), name='clone_pipe')
 ]
