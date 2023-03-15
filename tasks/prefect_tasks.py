@@ -92,9 +92,11 @@ def anonymize(context, pipeline, task_obj):
     # TODO - decide on the context contents
     option = context['option']
     special_char = context['special_char']
-    col = context['column']
+    col = context['column'].lower()
     try:
-        df_col_values = pipeline.data[col].values.tolist()
+        df_cols = [each.lower() for each in pipeline.data.columns]
+        col_index = df_cols.index(col)
+        df_col_values = pipeline.data.iloc[:, col_index].values.tolist() #pipeline.data[col].values.tolist()
         new_vals = []
         for val in df_col_values:
             val = str(val)
@@ -132,7 +134,8 @@ def anonymize(context, pipeline, task_obj):
                 else:
                     replace_val = val[:int(n)] + (special_char * (len(val) - int(n)))
                     new_vals.append(replace_val)
-        pipeline.data[col] = new_vals
+        #pipeline.data[col] = new_vals
+        pipeline.data.iloc[:, col_index] = new_vals
 
         data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
                                                    convert_integer=True, convert_boolean=True, convert_floating=True)

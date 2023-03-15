@@ -53,7 +53,8 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
         new_pipeline = pipeline.Pipeline(pipeline_object, data)
         print(" got pipeline id...", pipeline_id)
-        print("data before,,,%%%", data)
+        print("data before,,,%%%")
+        print(data)
         if res_details == "api_res":
             # if it's API resource need to execute all the tasks at once.
             tasks = pipeline_object.task_set.all().order_by("order_no")
