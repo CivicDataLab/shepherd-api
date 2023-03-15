@@ -1,3 +1,0 @@
-district,taluka,circle,latitude,longitude,stationId,stationdata
-Nagpur,Nagpur (R),Khapari Re,20.9951,79.0341,1,"{'hour': '00:00', 'dataDate': '2023-01-27 08:30:00.0', 'data': {'Temperature Maximum': 21.82}}"
-Nagpur,Nagpur (R),Khapari Re,20.9951,79.0341,1,"{'hour': '01:00', 'dataDate': '2023-01-27 09:30:00.0', 'data': {'Temperature Maximum': 21.82}}"
