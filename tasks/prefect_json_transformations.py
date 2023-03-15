@@ -62,7 +62,7 @@ def anonymize(context, pipeline, task_obj):
     try:
         def anonymize_a_key(d, change_key):
             for key in list(d.keys()):
-                if key == change_key:
+                if key.lower() == change_key.lower():
                     print("got change key..")
                     val = d[key]
                     print("value type is...", type(val))
