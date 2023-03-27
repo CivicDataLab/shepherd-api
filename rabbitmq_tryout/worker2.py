@@ -1,76 +1,43 @@
+import time
+
 import pika
-import change_format
 
-def execute_engine(binding_keys):
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost'))
+class Worker:
+    def __init__(self, binding_key):
+        self.binding_key = binding_key
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        self.channel = self.connection.channel()
 
-    channel = connection.channel()
-    channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-    result = channel.queue_declare('', exclusive=False, durable=True)
-    queue_name = result.method.queue
+        self.channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
 
-    print("queue name----", queue_name)
+        result = self.channel.queue_declare(queue='', exclusive=True)
+        self.queue_name = result.method.queue
 
-    for binding_key in binding_keys:
-         channel.queue_bind(
-             exchange='topic_logs', queue=queue_name, routing_key=binding_key)
+        self.channel.queue_bind(exchange='direct_logs', queue=self.queue_name, routing_key=binding_key)
 
-    def on_request(ch, method, props, body):
-        n = 0
-        print(" [.] fib(%s)" % n)
-        response = change_format.change_format("json")
-        ch.basic_publish(exchange="",
-                         routing_key=props.reply_to,
-                         properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
-                         body=str(response))
+        self.channel.basic_qos(prefetch_count=1)
+        self.channel.basic_consume(queue=self.queue_name, on_message_callback=self.callback)
+
+    def callback(self, ch, method, properties, body):
+        response = body.decode()
+        response = response + " from worker-2"
+        print(f'Received message "{response}" with binding key "{self.binding_key}"')
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        time.sleep(10)
+        self.send_response(response, properties.reply_to, properties.correlation_id)
 
+    def send_response(self, message, callback_queue, correlation_id):
+        self.channel.basic_publish(
+            exchange='',
+            routing_key=callback_queue,
+            properties=pika.BasicProperties(
+                correlation_id=correlation_id,
+            ),
+            body=message)
 
-    channel.basic_qos(prefetch_count=2)
-    channel.basic_consume(queue=queue_name, on_message_callback=on_request)
+        print(f'Sent response "{message}" to callback queue "{callback_queue}" with correlation ID "{correlation_id}"')
 
-    print(" [x] Awaiting RPC requests")
-    channel.start_consuming()
-
-
-execute_engine(binding_keys=["change_format", "convert"])
-
-
-
-
-
-
-
-
-
-
-
-
-
-# connection = pika.BlockingConnection(
-#     pika.ConnectionParameters(host='localhost'))
-# channel = connection.channel()
-#
-# channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-#
-# result = channel.queue_declare('', exclusive=True)
-# queue_name = result.method.queue
-# print(queue_name)
-# binding_keys = ["merge_column", "skip_column"]
-#
-# for binding_key in binding_keys:
-#     channel.queue_bind(
-#         exchange='logs_topic', queue=queue_name, routing_key=binding_key)
-#
-# print(' [*] Waiting for logs. To exit press CTRL+C')
-#
-#
-# def callback(ch, method, properties, body):
-#     print(" [x] %r:%r" % (method.routing_key, body))
-#
-#
-# channel.basic_consume(
-#     queue=queue_name, on_message_callback=callback, auto_ack=True)
-#
-# channel.start_consuming()
+binding_key = 'key2' # replace with the binding key that you want
+worker = Worker(binding_key)
+print(f'Started worker for binding key "{binding_key}"')
+worker.channel.start_consuming()

@@ -1,103 +1,52 @@
-import pandas as pd
-from sqlalchemy.future import create_engine
-import sqlite3
-import json
-
-import pandas as pd
 import pika
+import uuid
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+class Publisher:
+    def __init__(self):
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        self.channel = self.connection.channel()
 
-channel = connection.channel()
-channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-result = channel.queue_declare('', exclusive=False, durable=True)
-queue_name = result.method.queue
+        self.channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
+        self.channel.basic_qos(prefetch_count=1)
 
-print("queue name----", queue_name)
-binding_key = "db_loader"
+        result = self.channel.queue_declare(queue='', exclusive=True)
+        self.callback_queue = result.method.queue
 
-channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
+        self.channel.basic_consume(queue=self.callback_queue, on_message_callback=self.on_response)
 
+    def on_response(self, ch, method, props, body):
+        if self.correlation_id == props.correlation_id:
+            print("matched!!")
+            self.response = body
 
-def get_connection_object(
-        dbms_name: str,
-        port: str,
-        host: str,
-        user_name: str,
-        password: str,
-        db_name: str):
-    if dbms_name == 'postgresql':
-        return create_engine(f'{dbms_name}://{user_name}:{password}@{host}:{port}/{db_name}')
-    elif dbms_name == 'sqlite':
-        return sqlite3.connect(db_name)
+    def call(self, message, binding_key):
+        self.response = None
+        self.correlation_id = str(uuid.uuid4())
+        self.channel.basic_publish(
+            exchange='direct_logs',
+            routing_key=binding_key,
+            properties=pika.BasicProperties(
+                reply_to=self.callback_queue,
+                correlation_id=self.correlation_id,
+            ),
+            body=message)
 
+        timer = 0
+        while self.response is None and timer < 2:
+            self.connection.process_data_events(time_limit=2)
+            timer += 1
 
-def populate_db(context, data):
-    dbms_name = context['dbms_name']
-    port = context['port']
-    host = context['host']
-    user_name = context['user_name']
-    password = context['password']
-    db_name = context["db_name"]
-    table_name = context["table_name"]
-    data = pd.read_json(data)
-    get_connection_object(dbms_name=dbms_name, host=host, user_name=user_name,
-                               password=password, db_name=db_name, port=port)
-    try:
-      data.to_sql(table_name, engine, if_exists='append', index=False)
-    except Exception as e:
-        return "Worker failed with an error - " + str(e)
-    return "Successful"
+        if self.response is None:
+            print(f"No worker available for message '{message}' with binding key '{binding_key}'. Deleting message from queue.")
+            self.channel.queue_purge(self.callback_queue)
+            return "No worker bro"
 
+        return self.response.decode()
 
-def on_request(ch, method, props, body):
-    print("[x] received task message...")
-    task_details = json.loads(body)
-    context = task_details["context"]
-    data = task_details["data"]
-    try:
-        response = populate_db(context, data)
-        if isinstance(response, pd.core.frame.DataFrame):
-            response_msg = response.to_csv()
-        else:
-            response_msg = response
-            print(response_msg)
-        ch.basic_publish(exchange="",
-                         routing_key=props.reply_to,
-                         properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
-                         body=str(response_msg))
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        print("[x] sent the response to the client..")
-    except Exception as e:
-        raise e
+publisher = Publisher()
 
+binding_key = 'key1' # replace with the binding key that you want
+message = 'Hello World!' # replace with the message that you want to send
 
-channel.basic_qos(prefetch_count=2)
-channel.basic_consume(queue=queue_name, on_message_callback=on_request)
-
-print(" [x] Awaiting RPC requests")
-
-channel.start_consuming()
-
-
-
-
-
-
-
-
-
-engine = get_connection_object(dbms_name='sqlite', host='127.0.0.1', user_name='ecourts',
-                               password='admin', db_name='data_pipeline', port='5433')
-df = pd.read_csv('sample.csv')
-df.to_sql('marks', engine, if_exists='replace', index=False)
-print("done!!")
-
-# DB_HOST = '127.0.0.1'
-# DB_PORT = '5433'
-# DB_USER = 'ecourts'
-# DB_PASS = 'admin'
-# DB_NAME = 'ecourts'
-# DBMS_NAME = 'postgresql'
-# DB_DRIVER = 'psycopg2'
+response = publisher.call(message, binding_key)
+print(f'Response: {response}')

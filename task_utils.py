@@ -75,7 +75,21 @@ class TasksRpcClient(object):
     def call(self):
         self.response = None
         self.corr_id = str(uuid.uuid4())
-
+        # first send an ack message to see if the worker is up
+        ack_msg = "get-ack"
+        self.channel.basic_publish(
+            exchange='topic_logs',
+            routing_key=self.routing_key,
+            properties=pika.BasicProperties(
+                reply_to=self.callback_queue,
+                correlation_id=self.corr_id,
+            ),
+            body=ack_msg.encode("utf-8"))
+        self.connection.process_data_events(time_limit=2)
+        if self.response is None:
+            return "Worker failed with an error - No worker to pick the task".encode('utf-8')
+        print(self.response, "Response before message")
+        # Send the actual task oly if worker is alive
         message = {"context": self.context,
                    "data": self.data}
         self.channel.basic_publish(
@@ -103,7 +117,7 @@ def publish_task_and_process_result(task_obj, context, data):
         send_error_to_prefect_cloud(e)
     print("data in prefect..", data)
     exception_flag = False
-    if data.startswith("Worker failed with an error -"):
+    if data.startswith("Worker failed with an error"):
         print("found err msg", data)
         send_error_to_prefect_cloud(Exception(data))
         task_obj.status = "Failed"

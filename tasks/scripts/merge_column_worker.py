@@ -1,4 +1,5 @@
 import json
+import time
 
 import pandas as pd
 import pika
@@ -8,10 +9,11 @@ connection = pika.BlockingConnection(
 
 channel = connection.channel()
 channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-result = channel.queue_declare('', exclusive=False, durable=True)
-queue_name = result.method.queue
-
 binding_key = "merge_columns"
+result = channel.queue_declare(binding_key, exclusive=False, durable=True)
+queue_name = result.method.queue
+print(queue_name)
+
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 def merge_columns(context, data):

@@ -6,6 +6,7 @@ import pandas as pd
 # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dataplatform.settings")
 # import django
 # django.setup()
+import log_utils
 from datatransform import models
 from datatransform.models import Task
 
@@ -16,6 +17,7 @@ class Pipeline(object):
         self.data = data
         self._commands = list()
         self.schema = list()
+        self.logger = log_utils.get_logger_for_existing_file(self.model.pipeline_id)
 
     def add(self, tasks):
         self._commands.append(tasks)

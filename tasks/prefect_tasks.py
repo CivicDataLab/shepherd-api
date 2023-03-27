@@ -11,23 +11,26 @@ import re
 import pandas as pd
 import pdfkit
 from json2xml import json2xml
-from pandas.io.json import build_table_schema
 from prefect import task, flow
 from task_utils import *
-from task_utils import TasksRpcClient
 from io import StringIO
 
 
 @task
 def skip_column(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    print(exception_flag,"(((")
     if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
-        df = remove_unnamed_col(df)
+        try:
+            df = remove_unnamed_col(df)
+        except:
+            pass
         pipeline.data = df
         print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
-
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at skip_column""")
 
 @task
 def merge_columns(context, pipeline, task_obj):
@@ -38,6 +41,8 @@ def merge_columns(context, pipeline, task_obj):
         pipeline.data = df
         print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at merge_columns""")
 
 
 @task
@@ -49,6 +54,8 @@ def anonymize(context, pipeline, task_obj):
         pipeline.data = df
         print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at anonymize""")
 
 
 @task
@@ -118,6 +125,8 @@ def fill_missing_fields(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
     if not exception_flag:
         print(data, "???")
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at fill_missing_fields""")
 
 
 @task
@@ -125,7 +134,8 @@ def sample_scraper(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
     if not exception_flag:
         print("HERE IS S3 LINK------", data)
-
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at sample_scraper""")
 
 @task
 def db_loader(context, pipeline, task_obj):
@@ -134,11 +144,14 @@ def db_loader(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
     if not exception_flag:
         print("data loaded in db")
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at db_loader""")
 
 @flow
 def pipeline_executor(pipeline):
     print("setting ", pipeline.model.pipeline_name, " status to In Progress")
     pipeline.model.status = "In Progress"
+    pipeline.logger.info(f"""INFO: setting pipeline status to - In Progress""")
     print(pipeline.model.status)
     pipeline.model.save()
     tasks_objects = pipeline._commands
@@ -148,14 +161,17 @@ def pipeline_executor(pipeline):
         for i in range(len(func_names)):
             globals()[func_names[i]](contexts[i], pipeline, tasks_objects[i])
     except Exception as e:
+        pipeline.logger.error(f"""ERROR: Flow failed with an error - {str(e)}""")
         raise e
     for task in tasks_objects:
         if task.status == "Failed":
             pipeline.model.status = "Failed"
+            pipeline.logger.info(f"""INFO: The task - {task.task_name} was failed. Set Pipeline status to failed.""")
             pipeline.model.save()
             break
     if pipeline.model.status != "Failed":
         pipeline.model.status = "Done"
+        pipeline.logger.info(f"""INFO: Set Pipeline status to Done.""")
         pipeline.model.save()
     pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
     print("Data after pipeline execution\n", pipeline.data)

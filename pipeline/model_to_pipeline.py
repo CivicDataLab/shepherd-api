@@ -1,17 +1,18 @@
 import json
 import os
+
+import log_utils
 from datatransform.models import Pipeline
 from pipeline import pipeline
-from config import settings
+# from config import settings
 import pandas as pd
 from tasks import prefect_tasks
-from utils import update_resource, create_resource
-
-mod = __import__('tasks', fromlist=settings.tasks.values())
+# mod = __import__('tasks', fromlist=settings.tasks.values())
 
 def task_executor(pipeline_id, data_pickle):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
+    logger = log_utils.get_logger_for_existing_file(pipeline_id)
     try:
         data = None
         try:
@@ -32,8 +33,10 @@ def task_executor(pipeline_id, data_pickle):
             new_pipeline.add(task)
 
         [execution_from_model(task) for task in tasks]
+        logger.info(f"""INFO: Unwrapped tasks for {pipeline_id}""")
         prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         return
 
     except Exception as e:
+        logger.error(f"""ERROR: couldn't process request as got an error - {str(e)}""")
         raise e
