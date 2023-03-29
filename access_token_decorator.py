@@ -7,7 +7,7 @@ config = ConfigParser()
 
 config.read("config.ini")
 
-auth_url =  os.environ.get('AUTH_URL', config.get("datapipeline", "AUTH_URL"))
+auth_url = os.environ.get('AUTH_URL', config.get("datapipeline", "AUTH_URL"))
 
 
 def get_sys_token(func):

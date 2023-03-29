@@ -7,7 +7,7 @@ from pipeline.api_resource_query_bg import api_resource_query_task
 from pipeline.api_res_run_transform_task import api_res_run_transform_task
 import pipeline_creator_bg
 from .models import Task, Pipeline
-
+from validate_token_decorator import validate_token_or_none
 # Create your views here.
 
 from django.http import JsonResponse, HttpResponse
@@ -151,9 +151,13 @@ def transformer_list(request):
     return JsonResponse(context, safe=False)
 
 
-def pipeline_filter(request):
+@validate_token_or_none
+def pipeline_filter(request, username=None):
     """ Filters the pipeline objects based on the given dataset_id and returns all related data"""
     dataset_id = request.GET.get("datasetId", None)
+    if username is None:
+        context = {"Success": False, "Error": "User not verified"}
+        return JsonResponse(context, safe=False)
     pipeline_data = list(Pipeline.objects.filter(dataset_id=dataset_id))
     resp_list = []
     for each in pipeline_data:
@@ -236,9 +240,13 @@ def pipe_list(request):
     return JsonResponse(context, safe=False)
 
 
-def pipe_create(request):
+@validate_token_or_none
+def pipe_create(request, username=None):
     """ Creates pipeline for the given resource_id and executes a transformation on it."""
     if request.method == 'POST':
+        if username is None:
+            context = {"Success": False, "Error": "User not verified"}
+            return JsonResponse(context, safe=False)
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
@@ -261,22 +269,6 @@ def pipe_create(request):
             new_res_id = res_id
             p.resultant_res_id = res_id
         logger = log_utils.set_log_file(p_id, pipeline_name)
-        # transformers_list = post_data.get("transformers_list", None)
-        # transformers_list = [i for i in transformers_list if i]
-        # for _, each in enumerate(transformers_list):
-        #     task_name = each.get("name", None)
-        #     task_order_no = each.get("order_no", None)
-        #     task_context = each.get("context", None)
-        #     p.task_set.create(
-        #         task_name=task_name,
-        #         status="Created",
-        #         order_no=task_order_no,
-        #         context=task_context,
-        #     )
-        # logger.info(
-        #     f"INFO:Received request to create pipeline {pipeline_name} with these tasks"
-        #     f"{transformers_list}"
-        # )
         p.dataset_id = dataset_id
         p.resource_identifier = res_id
         p.db_action = db_action
@@ -291,9 +283,13 @@ def pipe_create(request):
         return JsonResponse(context, safe=False)
 
 
-def pipe_update(request):
+@validate_token_or_none
+def pipe_update(request, username = None):
     """ Hit this api to add more tasks to the existing pipeline """
     if request.method == 'POST':
+        if username is None:
+            context = {"Success": False, "Error": "User not verified"}
+            return JsonResponse(context, safe=False)
         post_data = json.loads(request.body.decode('utf-8'))
         p_id = post_data.get('p_id', None)
         pipeline_object = Pipeline.objects.get(pk=p_id)
@@ -328,9 +324,13 @@ def read_data(data_url):
     return all_data
 
 
-def res_transform(request):
+@validate_token_or_none
+def res_transform(request, username = None):
     """Triggers pipeline_creator_bg background task."""
     if request.method == "POST":
+        if username is None:
+            context = {"Success": False, "Error": "User not verified"}
+            return JsonResponse(context, safe=False)
         post_data = json.loads(request.body.decode("utf-8"))
         pipeline_name = post_data.get("pipeline_name", None)
         dataset_id = post_data.get("dataset_id", None)
@@ -403,6 +403,7 @@ def api_res_transform(request):
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
 
+
 def delete_api_res_transform(request):
     if request.method == "POST":
         post_data = json.loads(request.body.decode("utf-8"))
@@ -410,34 +411,32 @@ def delete_api_res_transform(request):
         Pipeline.objects.filter(pipeline_id=pipeline_id).delete()
         context = {"Success": True}
         return JsonResponse(context, safe=False)
-    
+
+
 def clone_pipe(request):
     if request.method == "POST":
         post_data = json.loads(request.body.decode("utf-8"))
-        #print ('---------------------clonedata', post_data)
+        # print ('---------------------clonedata', post_data)
         pipeline_id = post_data.get("pipeline_id", None)
         dataset_id = post_data.get("dataset_id", None)
         resource_id = post_data.get("resource_id", None)
         resultant_res_id = post_data.get("resultant_res_id", None)
-        
+
         pipe_clone = Pipeline.objects.get(pipeline_id=pipeline_id)
         pipe_clone.pk = None
         setattr(pipe_clone, 'dataset_id', dataset_id)
         setattr(pipe_clone, 'resource_identifier', resource_id)
         setattr(pipe_clone, 'resultant_res_id', resultant_res_id)
         pipe_clone.save()
-        
-        
+
         tasks = Task.objects.filter(Pipeline_id=pipeline_id)
         for task in tasks:
             task_clone = Task.objects.get(task_id=task.task_id)
             task_clone.pk = None
-        
+
             setattr(task_clone, 'Pipeline_id', pipe_clone)
             task_clone.save()
-        
-        
-                
+
         context = {"Success": True}
         return JsonResponse(context, safe=False)
 
@@ -468,12 +467,12 @@ def api_res_run_transform(request):
         except Exception as e:
             print(str(e))
 
-        #print ('*****', resp_data)
+        # print ('*****', resp_data)
 
         if response_type.lower() == "csv":
-            resp_data = resp_data.to_dict('records') #string(index=False)
+            resp_data = resp_data.to_dict('records')  # string(index=False)
 
-        #print ('------111----', resp_data)
+        # print ('------111----', resp_data)
 
         context = {"Success": True, "data": resp_data, "response_type": response_type}
         return JsonResponse(context, safe=False)

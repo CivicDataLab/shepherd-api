@@ -128,10 +128,16 @@ def get_technical_interoperability_rating(dataset_response, params_json):
             xml_count += 1
         else:
             return 0
-    csv_percentage = custom_round((csv_count / distributions_count) * 100)
-    json_percentage = custom_round((json_count / distributions_count) * 100)
-    xml_percentage = custom_round((xml_count / distributions_count) * 100)
-    pdf_percentage = custom_round((pdf_count / distributions_count) * 100)
+    if distributions_count == 0:
+        csv_percentage = 0
+        json_percentage = 0
+        xml_percentage = 0
+        pdf_percentage = 0
+    else:
+        csv_percentage = custom_round((csv_count / distributions_count) * 100)
+        json_percentage = custom_round((json_count / distributions_count) * 100)
+        xml_percentage = custom_round((xml_count / distributions_count) * 100)
+        pdf_percentage = custom_round((pdf_count / distributions_count) * 100)
     print("csv percentage----", csv_percentage)
     print("json prctng--", json_percentage)
     print("xml prcentg--", xml_percentage)
@@ -199,7 +205,10 @@ def get_rating_and_update_dataset(params_json=default_params_json):
             try:
                 published_date = published_date[:9]
                 num_of_months = get_num_of_months(published_date)
-                downloads_per_month = downloads // num_of_months
+                if num_of_months == 0:
+                    downloads_per_month = downloads
+                else:
+                    downloads_per_month = downloads // num_of_months
                 downloads_per_month_rating = calculate_rating_for_numerical_params("downloads_per_month",
                                                                                    downloads_per_month, params_json)
                 rating_list.append(downloads_per_month_rating)
