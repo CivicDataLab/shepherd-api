@@ -3,6 +3,7 @@ import json
 import requests
 from configparser import ConfigParser
 import os
+from django.http import JsonResponse, HttpResponse
 
 config = ConfigParser()
 
@@ -38,16 +39,15 @@ def validate_token_or_none(func):
             user_token = args[1].context.META.get("HTTP_AUTHORIZATION", "")
         if user_token == "":
             print("Whoops! Empty user")
+            return JsonResponse({"Success": False, "error": "Empty user token"}, safe=False)
         else:
             body = json.dumps({"access_token": user_token})
             try:
                 response_json = request_to_server(body, "verify_user_token")
-                username = response_json["preferred_username"]
-                kwargs["username"] = username
                 if not response_json["success"]:
-                    return {"Success": False}
-            except:
-                pass
+                    return JsonResponse({"Success": False, "error": "Invalid token"}, safe=False)
+            except Exception as e:
+                return JsonResponse({"Success": False, "error": str(e)}, safe=False)
         return func(*args, **kwargs)
 
     return inner

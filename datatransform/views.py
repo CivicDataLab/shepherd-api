@@ -158,9 +158,6 @@ def transformer_list(request):
 def pipeline_filter(request, username=None):
     """ Filters the pipeline objects based on the given dataset_id and returns all related data"""
     dataset_id = request.GET.get("datasetId", None)
-    if username is None:
-        context = {"Success": False, "Error": "User not verified"}
-        return JsonResponse(context, safe=False)
     pipeline_data = list(Pipeline.objects.filter(dataset_id=dataset_id))
     resp_list = []
     for each in pipeline_data:
@@ -249,9 +246,6 @@ def pipe_list(request):
 def pipe_create(request, username=None):
     """ Creates pipeline for the given resource_id and executes a transformation on it."""
     if request.method == 'POST':
-        if username is None:
-            context = {"Success": False, "Error": "User not verified"}
-            return JsonResponse(context, safe=False)
         post_data = json.loads(request.body.decode('utf-8'))
         pipeline_name = post_data.get('pipeline_name', None)
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
