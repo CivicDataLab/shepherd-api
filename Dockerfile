@@ -29,6 +29,7 @@ RUN /code/rabbit.sh
 RUN pip install -r requirements.txt
 RUN pip install psycopg2-binary
 RUN python manage.py migrate
+RUN python manage.py createcachetable
 EXPOSE 8000 15671 15672 25671 25672 4200
 
 CMD ["/code/start.sh"]
