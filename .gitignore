@@ -6,6 +6,12 @@ __pycache__/
 
 # C extensions
 *.so
+# others
+orion.db
+sqlite*
+db2.s*
+rabbitmq_tryout/*
+
 
 # Distribution / packaging
 .Python
@@ -110,11 +116,11 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+*.csv
 # Spyder project settings
 .spyderproject
 .spyproject
-
+db.sqlite3
 # Rope project settings
 .ropeproject
 

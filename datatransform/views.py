@@ -1,28 +1,68 @@
-from .models import Task, Pipeline
-from pipeline.model_to_pipeline import model_to_pipeline
+import pika
+import requests
+from background_task.models import CompletedTask
 
+import log_utils
+from .models import Task, Pipeline
 # Create your views here.
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import pandas as pd
 import json
 import uuid
-from utils import upload_dataset
 
 
 def transformer_list(request):
     transformers = [
         {"name": "skip_column", "context": [
-            {"name": "columns", "type": "string", "desc": "Please enter comma separated column names to be deleted"}]},
+            {"name": "columns", "type": "field_multi", "desc": "Please select column names to be deleted"}]},
         {"name": "merge_columns", "context": [
-            {"name": "column1", "type": "string", "desc": "Please enter first column name"},
-            {"name": "column2", "type": "string", "desc": "Please enter second column name"},
+            {"name": "column1", "type": "field_single", "desc": "Please select first column name"},
+            {"name": "column2", "type": "field_single", "desc": "Please select second column name"},
             {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
             {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
+        ]},
+        {"name": "change_format", "context": [
+            {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
+        {"name": "anonymize", "context": [
+            {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
+            {"name": "replace_val", "type": "string", "desc": "Replacement string"},
+            {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"}
+        ]},
+        {"name": "aggregate", "context": [
+            {"name": "index", "type": "string", "desc": "Field that is needed as index"},
+            {"name": "columns", "type": "field_multi", "desc": "Select column names"},
+            {"name": "values", "type": "string", "desc": "values"}
         ]}
     ]
 
     context = {"result": transformers, "Success": True}
+    return JsonResponse(context, safe=False)
+
+
+def pipeline_filter(request):
+    dataset_id = request.GET.get('datasetId', None)
+    pipeline_data = list(Pipeline.objects.filter(dataset_id=dataset_id))
+    resp_list = []
+    for each in pipeline_data:
+        p_id = each.pipeline_id
+        task_data = list(Task.objects.filter(Pipeline_id=p_id))
+        tasks_list = []
+        for task in task_data:
+            t_data = {
+                'task_id': task.task_id, 'task_name': task.task_name, 'context': task.context,
+                'status': task.status, 'order_no': task.order_no, 'created_at': task.created_at,
+                'result_url': task.result_url, 'output_id': task.output_id
+            }
+            tasks_list.append(t_data)
+        data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
+                'output_id': each.output_id, 'created_at': each.created_at,
+                'status': each.status, 'resource_id': each.resource_id, 'tasks': tasks_list
+                }
+        resp_list.append(data)
+
+    context = {"result": resp_list, "Success": True}
+
     return JsonResponse(context, safe=False)
 
 
@@ -49,31 +89,25 @@ def pipe_list(request):
 
 def pipe_create(request):
     if request.method == 'POST':
-
-        # print("enter")
-        # print(request.body)
-
         post_data = json.loads(request.body.decode('utf-8'))
-        # print(post_data)
+        print("#####", post_data)
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
-        org_name = post_data.get('org_name', None)
-        pipeline_name = post_data.get('name', '')
-
-        # print(data_url, transformers_list)
-        transformers_list = [i for i in transformers_list if i]
-
-        try:
-            data = read_data(data_url)
-        except Exception as e:
-            data = None
-
+        pipeline_name = post_data.get('pipeline_name', '')
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
-        # p.output_id = upload_dataset(pipeline_name, org_name)
         p.save()
 
         p_id = p.pk
+        logger = log_utils.set_log_file(p_id, pipeline_name)
+        transformers_list = [i for i in transformers_list if i]
+        try:
+            data = read_data(data_url)
+        except Exception as e:
+            print(str(e), "&&&&&&&")
+            logger.error(f""" Got an error while reading data from URL - {str(e)}""")
+            data = None
+
 
         for _, each in enumerate(transformers_list):
             task_name = each.get('name', None)
@@ -83,33 +117,31 @@ def pipe_create(request):
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
         temp_file_name = uuid.uuid4().hex
-        if data:
-            data.to_pickle(temp_file_name)
-        model_to_pipeline(p_id, temp_file_name)
+
+        if data is not None:
+            if not data.empty:
+                data.to_csv(temp_file_name)
+        message_body = {
+            'p_id': p_id,
+            'temp_file_name': temp_file_name,
+            'res_details': ""
+        }
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
+        channel.queue_declare(queue='pipeline_ui_queue')
+        channel.basic_publish(exchange='',
+                              routing_key='pipeline_ui_queue',
+                              body=json.dumps(message_body))
+        print(" [x] Sent %r" % message_body)
+        connection.close()
+        logger.info(f"""INFO: sent {message_body} to the worker demon""")
         context = {"result": p_id, "Success": True}
-
         return JsonResponse(context, safe=False)
-
-        # transformed_data = data.copy()
-        # all_stage_data = {0:transformed_data}
-
-        # transformed_data = globals()[trans_oper](transformed_data, trans_column, trans_operval)
-        # all_stage_data[index+1] = transformed_data
 
 
 def read_data(data_url):
     all_data = pd.read_csv(data_url)
-    all_data.fillna(value="", inplace=True)
 
     return all_data
-
-# def multiply(data, trans_column, trans_operval):
-
-#     data[trans_column] = data[trans_column].apply(lambda x: x*trans_operval)
-#     return data
-
-
-# def add(data, trans_column, trans_operval):
-
-#     data[trans_column] = data[trans_column].apply(lambda x: x+trans_operval)
-#     return data

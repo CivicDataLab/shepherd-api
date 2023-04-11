@@ -1,7 +1,14 @@
+import sys
+
 import pandas as pd
 
-from pipeline.task import Task
+# import os
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dataplatform.settings")
+# import django
+# django.setup()
+import log_utils
 from datatransform import models
+from datatransform.models import Task
 
 
 class Pipeline(object):
@@ -9,18 +16,19 @@ class Pipeline(object):
         self.model = model
         self.data = data
         self._commands = list()
+        self.schema = list()
+        self.logger = log_utils.get_logger_for_existing_file(self.model.pipeline_id)
 
-    def add(self, command: Task):
-        command.set_pipeline_out(self.model.output_id)
-        if len(self._commands) != 0:
-            self._commands[-1].add_next(command)
-        self._commands.append(command)
+    def add(self, tasks):
+        self._commands.append(tasks)
         return self
 
-    def execute(self):
-        self.model.status = 'In Progress'
-        self.model.save()
-        self._commands[0].set_data(self.data)
-        self._commands[0].execute_chain()
-        self.model.status = "Done"
-        self.model.save()
+
+    #
+    # def execute(self):
+    #     self.model.status = 'In Progress'
+    #     self.model.save()
+    #     self._commands[0].set_data(self.data)
+    #     self._commands[0].execute_chain()
+    #     self.model.status = "Done"
+    #     self.model.save()
