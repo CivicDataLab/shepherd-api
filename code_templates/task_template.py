@@ -9,7 +9,7 @@ import json
 import pandas as pd
 import pika
 
-from tasks.scripts.s3_utils import upload_result
+#from tasks.scripts.s3_utils import upload_result
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -20,22 +20,17 @@ result = channel.queue_declare('', exclusive=False, durable=True)
 queue_name = result.method.queue
 
 print("queue name----", queue_name)
-binding_key = "skip_column"
+binding_key = "{task_name}"
 
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
-def skip_column(context, data):
-    column = context['columns']
-    col = column
-    transformed_data = pd.read_json(data)
-    if not isinstance(column, list):
-        column = list()
-        column.append(col)
+def {task_name}(context, data):
     try:
-        transformed_data = transformed_data.drop(column, axis=1)
+        # write your logic here
     except Exception as e:
         return "Worker failed with an error - " + str(e)
+    # return the transformed data 
     return transformed_data
 
 
@@ -54,7 +49,7 @@ def on_request(ch, method, props, body):
         context = task_details["context"]
         data = task_details["data"]
         try:
-            response = skip_column(context, data)
+            response = {task_name}(context, data)
             if isinstance(response, pd.core.frame.DataFrame):
                 response_msg = response.to_csv()
             else:

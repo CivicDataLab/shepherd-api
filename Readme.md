@@ -44,5 +44,13 @@ Paste the generated code in [prefect_tasks](tasks/prefect_tasks.py)
 ``data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)  
   if not exception_flag:``
  These lines publish your task along with the context and the data in the queue. After that write post-processing script. i.e. what you want to do with data.
-4. Write the worker's logic in a separate file under [scripts](tasks/scripts) directory. Use the existing `template.py`
-to write the worker.
+4. Write the worker's logic in a separate file under [scripts](tasks/scripts) directory. Generate the code
+by running `task_template.py` under - [code_templates](code_templates) directory. Following is the sample command to generate worker template
+
+` python task_template.py --task_name "<task_name_here>" --result_file "<resultant_file_name_here>"`
+
+The above command will generate the task-template. Go through it, and there will be a method defined with the task name and the logic needs to be written there. 
+
+5. Once the worker code is ready, deploy it to the server, and run the code i.e. 
+ `python <file_name.py>` - this will start the worker. Whenever the publisher publishes a message for this worker, worker picks the message, processes it
+and returns the response back to the publisher.
