@@ -56,7 +56,7 @@ def api_transformer_list(request):
     context = {"result": transformers, "Success": True}
     return JsonResponse(context, safe=False)
 
-@ratelimit(key='ip', rate='2/m')
+# @ratelimit(key='ip', rate='2/m')
 @validate_token_or_none
 def transformer_list(request):
     """ returns list of transformations with required input fields to the front-end """
@@ -154,7 +154,7 @@ def transformer_list(request):
 
 
 
-@ratelimit(key='ip', rate='2/m')
+# @ratelimit(key='ip', rate='2/m')
 @validate_token_or_none
 def pipeline_filter(request, username=None):
     """ Filters the pipeline objects based on the given dataset_id and returns all related data"""
@@ -196,7 +196,7 @@ def pipeline_filter(request, username=None):
     return JsonResponse(context, safe=False)
 
 
-@ratelimit(key='ip', rate='2/m')
+# @ratelimit(key='ip', rate='2/m')
 @validate_token_or_none
 def pipe_list(request):
     task_data = list(Task.objects.all().values())
@@ -244,7 +244,7 @@ def pipe_list(request):
 
 
 
-@ratelimit(key='ip', rate='2/m')
+# @ratelimit(key='ip', rate='2/m')
 @validate_token_or_none
 def pipe_create(request, username=None):
     """ Creates pipeline for the given resource_id and executes a transformation on it."""
