@@ -18,5 +18,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path('transformer/', include('datatransform.urls')),
-    path('admin/', admin.site.urls),
+    path('pmu/', admin.site.urls),
 ]
