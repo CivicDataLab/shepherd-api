@@ -13,6 +13,12 @@ from graphql_service import *
 from datetime import datetime, timedelta
 from dateutil import relativedelta
 
+config = ConfigParser()
+
+config.read("config.ini")
+
+note_string = os.environ.get('HVD_NOTE',config.get("datapipeline", 'HVD_NOTE'))
+print(note_string)
 params_file = open("dataset_params.json")
 default_params_json = json.load(params_file)
 
@@ -162,9 +168,14 @@ def get_rating_and_update_dataset(params_json=default_params_json):
         send_info_to_prefect_cloud("Using custom params file...")
     all_datasets = get_all_datasets()
     dataset_ids = []
-
+    idx = 0
     for dataset in all_datasets:
+        idx += 1
+        if dataset['_id'] == "233" or dataset['_id']=='235':
+            continue
         dataset_ids.append(dataset["_id"])
+        if idx == 4:
+            break
     rating_details_df = pd.DataFrame(columns=["Dataset Name", "Technical Interoperability Rating",
                                               "Timeliness Rating", "User Rating - Rating",
                                               "User Interaction Rating", "Download-rating",
@@ -238,13 +249,13 @@ def get_rating_and_update_dataset(params_json=default_params_json):
         patch_dataset(dataset_id, round(sum(rating_list), 1))
     ratings_file_name = "Rating_details.csv"
     rating_details_df.to_csv(ratings_file_name, index=False)
+    with open(ratings_file_name, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Note:', note_string])
     try:
-        # with open('Rating_details.csv', 'r') as file:
-        #     print (file.read())
-        
         email_url =  os.environ.get('EMAIL_URL', config.get("datapipeline", "EMAIL_URL"))
         headers = {}
-        files = {'file': open('Rating_details.csv', 'rb')}   
+        files = {'file': open('Rating_details.csv', 'rb')}
         response = requests.request("POST", email_url, headers=headers, files=files)
         response_json = response.text
         print ('------mail response', response_json)

@@ -1,89 +1,76 @@
 import json
-import random
 
-option = "replace_all"
-special_char = "*"
-n = "2"
+import pandas as pd
+import pika
+
+from tasks.scripts.s3_utils import upload_result
+
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host='localhost'))
+
+channel = connection.channel()
+channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+result = channel.queue_declare('', exclusive=False, durable=True)
+queue_name = result.method.queue
+
+print("queue name----", queue_name)
+binding_key = "skip_column"
+
+channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
+def skip_column(context, data):
+    column = context['columns']
+    col = column
+    transformed_data = pd.read_json(data)
+    if not isinstance(column, list):
+        column = list()
+        column.append(col)
+    try:
+        transformed_data = transformed_data.drop(column, axis=1)
+    except Exception as e:
+        return "Worker failed with an error - " + str(e)
+    return transformed_data
 
-def anonymize_a_key(d, change_key):
-    for key in list(d.keys()):
-        if key == change_key:
-            print("got change key..")
-            val = d[key]
-            print("value type is...", type(val))
-            if isinstance(val, int):
-                val = str(val)
-            if isinstance(val, str):
-                if option == "replace_all":
-                    if special_char == "random":
-                        replace_val = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=len(val)))
-                        d[key] = replace_val
-                    else:
-                        replace_val = special_char * len(val)
-                        d[key] = replace_val
-                elif option == "replace_nth":
-                    # n = context.get('n')
-                    # n = int(n) - 1
-                    # if special_char == "random":
-                    #     replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
-                    #     replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
-                    #     d[key] = replace_val
-                    # else:
-                    #     replace_val = val[0:int(n)] + special_char + val[int(n) + 1:]
-                    #     d[key] = replace_val
-                    # n = context.get('n')
-                    n = int(n)  # - 1
-                    if special_char == "random":
-                        replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=1))
 
-                        for i in range((n - 1), len(val) + (n - 1), n):
-                            val = val[: i] + replacement + val[i + 1:]
-                            # for i in range(0, len(val), int(n)):
-                        #     val = val[ : i] + replacement + val[i + 1: ] 
-                        # replace_val = val[0:int(n)] + replacement + val[int(n) + 1:]
-                        d[key] = val
-                    else:
-                        for i in range((n - 1), len(val) + (n - 1), n):
-                            val = val[: i] + special_char + val[i + 1:]
-                            # for i in range(0, len(val), int(n)):
-                        #     val = val[ : i] + special_char + val[i + 1: ] 
-                        d[key] = val
-                elif option == "retain_first_n":
-                    if special_char == "random":
-                        replacement = "".join(random.choices("!@#$%^&*()<>?{}[]~`", k=(len(val) - int(n))))
-                        replace_val = val[:int(n)] + replacement
-                        d[key] = replace_val
-                    else:
-                        replace_val = val[:int(n)] + (special_char * (len(val) - int(n)))
-                        d[key] = replace_val
+def on_request(ch, method, props, body):
+    # send the worker-alive message if the request message is -> get-ack
+    if body.decode('utf-8') == 'get-ack':
+        print("inside if..")
+        ch.basic_publish(exchange="",routing_key=props.reply_to,
+                         properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
+                         body='worker alive'.encode("utf-8"))
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    else:
+        # if the message is other than "get-ack" then carryout the task
+        task_details = json.loads(body)
+        context = task_details["context"]
+        data = task_details["data"]
+        try:
+            response = skip_column(context, data)
+            if isinstance(response, pd.core.frame.DataFrame):
+                response_msg = response.to_csv()
             else:
-                anonymize_col(d[key], change_key)
-        else:
-            print("in else")
-            print(d[key])
-            anonymize_col(d[key], change_key)
+                response_msg = response
+            with open("skip_column_result", "wb") as f:
+                print(response_msg)
+                print(type(response_msg))
+                f.write(response_msg.encode('utf-8'))
+                s3_link = upload_result("skip_column_result")
+            response_msg = s3_link
+            ch.basic_publish(exchange="",
+                             routing_key=props.reply_to,
+                             properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
+                             body=str(response_msg))
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            print("[x] sent the response to the client..")
+        except Exception as e:
+            raise e
 
 
-def anonymize_col(d, change_key):
-    if isinstance(d, dict):
-        anonymize_a_key(d, change_key)
-    if isinstance(d, list):
-        print("here as I got list")
-        for each in d:
-            if isinstance(each, dict):
-                anonymize_a_key(each, change_key)
+channel.basic_qos(prefetch_count=2)
+channel.basic_consume(queue=queue_name, on_message_callback=on_request)
 
+print(" [x] Awaiting RPC requests")
 
-    return d
-
-data_file = open("data.json")
-data = json.load(data_file)
-data_str = json.dumps(data)
-data = json.loads(data_str)
-final_d = anonymize_col(data, "order")
-json_obj = json.dumps(final_d)
-print("writing")
-with open("transformed.json", "w") as outfile:
-    outfile.write(json_obj)
+channel.start_consuming()
