@@ -7,6 +7,7 @@ from functools import reduce
 
 import pandas as pd
 from prefect import get_run_logger, flow
+import time
 
 import graphql_service
 from graphql_service import *
@@ -247,7 +248,7 @@ def get_rating_and_update_dataset(params_json=default_params_json):
 
         send_info_to_prefect_cloud(log_string)
         patch_dataset(dataset_id, round(sum(rating_list), 1))
-    ratings_file_name = "Rating_details.csv"
+    ratings_file_name = "IDP_Dataset_Rating_" + (time.strftime("%Y%m%d-%H%M%S")) + ".csv"
     rating_details_df.to_csv(ratings_file_name, index=False)
     with open(ratings_file_name, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -255,7 +256,7 @@ def get_rating_and_update_dataset(params_json=default_params_json):
     try:
         email_url =  os.environ.get('EMAIL_URL', config.get("datapipeline", "EMAIL_URL"))
         headers = {}
-        files = {'file': open('Rating_details.csv', 'rb')}
+        files = {'file': open(ratings_file_name, 'rb')}
         response = requests.request("POST", email_url, headers=headers, files=files)
         response_json = response.text
         print ('------mail response', response_json)
