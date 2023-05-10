@@ -77,7 +77,7 @@ def task_executor(pipeline_id, data_pickle, res_details, db_action, file_format)
                 prefect_json_transformations.json_pipeline_executor(new_pipeline)
                 return new_pipeline.data            
 
-        task = list(pipeline_object.task_set.all().order_by("order_no"))[-1]
+        task = list(pipeline_object.task_set.all().order_by("task_id"))[-1]
 
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
 

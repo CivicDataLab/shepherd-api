@@ -57,7 +57,7 @@ def api_transformer_list(request):
     return JsonResponse(context, safe=False)
 
 # @ratelimit(key='ip', rate='2/m')
-@validate_token_or_none
+# @validate_token_or_none
 def transformer_list(request):
     """ returns list of transformations with required input fields to the front-end """
     transformers = [
@@ -155,7 +155,7 @@ def transformer_list(request):
 
 
 # @ratelimit(key='ip', rate='2/m')
-@validate_token_or_none
+# @validate_token_or_none
 def pipeline_filter(request, username=None):
     """ Filters the pipeline objects based on the given dataset_id and returns all related data"""
     dataset_id = request.GET.get("datasetId", None)
@@ -289,9 +289,9 @@ def pipe_create(request, username=None):
 def pipe_update(request, username = None):
     """ Hit this api to add more tasks to the existing pipeline """
     if request.method == 'POST':
-        if username is None:
-            context = {"Success": False, "Error": "User not verified"}
-            return JsonResponse(context, safe=False)
+        # if username is None:
+        #     context = {"Success": False, "Error": "User not verified"}
+        #     return JsonResponse(context, safe=False)
         post_data = json.loads(request.body.decode('utf-8'))
         p_id = post_data.get('p_id', None)
         pipeline_object = Pipeline.objects.get(pk=p_id)
