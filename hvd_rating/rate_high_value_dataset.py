@@ -18,7 +18,7 @@ config = ConfigParser()
 
 config.read("config.ini")
 
-note_string = os.environ.get('HVD_NOTE',config.get("datapipeline", 'HVD_NOTE'))
+note_string = os.environ.get('HVD_NOTE', config.get("datapipeline", 'HVD_NOTE'))
 print(note_string)
 params_file = open("dataset_params.json")
 default_params_json = json.load(params_file)
@@ -29,6 +29,10 @@ def custom_round(num):
         return int(num) + 1
     else:
         return int(num)
+
+
+def get_weight(key, params_json):
+    return params_json[key]["weight"]
 
 
 def send_info_to_prefect_cloud(info: str):
@@ -46,6 +50,7 @@ def get_num_of_months(published_date):
         return num_of_months
     except:
         return 0
+
 
 def get_period(period_from, period_to):
     date_format = "%Y-%m-%d"
@@ -169,48 +174,56 @@ def get_rating_and_update_dataset(params_json=default_params_json):
         send_info_to_prefect_cloud("Using custom params file...")
     all_datasets = get_all_datasets()
     dataset_ids = []
-    idx = 0
+    # idx = 0
     for dataset in all_datasets:
-        idx += 1
-        if dataset['_id'] == "233" or dataset['_id']=='235':
-            continue
+        # idx += 1
+        # if dataset['_id'] == "233" or dataset['_id'] == '235' or dataset['_id'] == '236':
+        #     continue
         dataset_ids.append(dataset["_id"])
-        if idx == 4:
-            break
-    rating_details_df = pd.DataFrame(columns=["Dataset Name", "Technical Interoperability Rating",
-                                              "Timeliness Rating", "User Rating - Rating",
-                                              "User Interaction Rating", "Download-rating",
-                                              "Downloads per month rating", "Total Rating"])
+        # if idx == 4:
+        #     break
+    rating_details_df = pd.DataFrame(
+        columns=["Dataset Name", "Technical Interoperability Rating", "Technical Interoperability Weight",
+                 "Timeliness Rating", "Timeliness Weight", "User Rating - Rating",
+                 "User Rating - Weight",  "User Interaction Rating","User Interaction Weight",
+                 "Download-rating", "Download-rating Weight", "Downloads per month rating",
+                 "Downloads per month Weight", "Total Rating"])
 
     for dataset_id in dataset_ids:
-        
-        rating_list = []
+
+        rating_list = []  # holds all the ratings
+        weights_list = []  # holds all the weights
         response = graphql_service.get_dataset(dataset_id)
         print(response)
         dataset_name = response['data']['dataset']['title']
         # get percentage of csvs, jsons, xmls and pdfs
         tech_interoperability_rating = get_technical_interoperability_rating(response, params_json)
         rating_list.append(tech_interoperability_rating)
+        weights_list.append(get_weight('formats', params_json))  # Max tech. interoperability score
 
         update_frequency = response['data']['dataset']['update_frequency']
         update_frequency = str(update_frequency).replace(" ", "").lower()
         update_frequency_rating = calculate_rating_for_string_params("update_frequency", update_frequency, params_json)
         rating_list.append(update_frequency_rating)
+        weights_list.append(get_weight('update_frequency', params_json))
 
         average_rating = response['data']['dataset']['average_rating']
         average_rating_contribution = calculate_rating_for_numerical_params("average_rating",
                                                                             round(custom_round(average_rating), 1),
                                                                             params_json)
         rating_list.append(average_rating_contribution)
+        weights_list.append(get_weight('average_rating', params_json))
 
         user_interaction = len(response['data']['dataset']['datasetratings_set'])
         user_interaction_rating = calculate_rating_for_numerical_params("user_interaction", user_interaction,
                                                                         params_json)
         rating_list.append(user_interaction_rating)
+        weights_list.append(get_weight('user_interaction', params_json))
 
         downloads = response['data']['dataset']['download_count']
         download_rating = round(calculate_rating_for_numerical_params("downloads", int(downloads), params_json), 2)
         rating_list.append(download_rating)
+        weights_list.append(get_weight('downloads', params_json))
 
         published_date = response['data']['dataset']['published_date']
         if published_date is not None:
@@ -224,13 +237,16 @@ def get_rating_and_update_dataset(params_json=default_params_json):
                 downloads_per_month_rating = calculate_rating_for_numerical_params("downloads_per_month",
                                                                                    downloads_per_month, params_json)
                 rating_list.append(downloads_per_month_rating)
+                weights_list.append(get_weight('downloads_per_month', params_json))
             except:
                 rating_list.append(0)
+                weights_list.append(get_weight('downloads_per_month', params_json))
         else:
             rating_list.append(0)
+            weights_list.append(get_weight('downloads_per_month', params_json))
 
         print(rating_list)
-        print(round(sum(rating_list),2), "????")
+        print(round(sum(rating_list), 2), "????")
 
         log_string = f'''
         The dataset - {dataset_name} has got a total rating of {round(sum(rating_list), 1)} with the following contribution
@@ -242,32 +258,49 @@ def get_rating_and_update_dataset(params_json=default_params_json):
         Downloads per month - {round(rating_list[5], 1)}
         '''
         print("writing to file...")
-        rating_details_df.loc[len(rating_details_df)] = [dataset_name, round(rating_list[0], 1), round(rating_list[1], 1),
-                              round(rating_list[2], 1), round(rating_list[3], 1), round(rating_list[4], 1),
-                              round(rating_list[5], 1), round(sum(rating_list), 1)]
+        print(len(rating_details_df.columns), "[[[[[")
+        print(weights_list, ">>>>>>")
+
+        rating_details_df.loc[len(rating_details_df)] = [dataset_name,  # Dataset Name
+                                                         round(rating_list[0], 1),  # Technical Interoperability Rating
+                                                         weights_list[0],  # Technical Interoperability Weight
+                                                         round(rating_list[1], 1),  # Timeliness Rating
+                                                         weights_list[1],  # Timeliness Weight
+                                                         round(rating_list[2], 1),  # User Rating - Rating
+                                                         weights_list[2],  # User Rating - Weight
+                                                         round(rating_list[3], 1),  # User Interaction Rating
+                                                         weights_list[3],  # User Interaction Weight
+                                                         round(rating_list[4], 1),  # Download-rating
+                                                         weights_list[4],  # Download-rating Weight
+                                                         round(rating_list[5], 1),  # Downloads per month rating
+                                                         weights_list[5],  # Downloads per month Weight
+                                                         round(sum(rating_list), 1)]  # Total rating
 
         send_info_to_prefect_cloud(log_string)
         patch_dataset(dataset_id, round(sum(rating_list), 1))
-    ratings_file_name = "IDP_Dataset_Rating_" + (time.strftime("%Y%m%d-%H%M%S")) + ".csv"
+    ratings_file_name = "NIC_IDP_HVDClassifier" + (time.strftime("%Y-%m-%d-%H.%M.%S")) + ".csv"
     rating_details_df.to_csv(ratings_file_name, index=False)
     with open(ratings_file_name, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Note:', note_string])
     try:
-        email_url =  os.environ.get('EMAIL_URL', config.get("datapipeline", "EMAIL_URL"))
+        email_url = os.environ.get('EMAIL_URL', config.get("datapipeline", "EMAIL_URL"))
         headers = {}
         files = {'file': open(ratings_file_name, 'rb')}
         response = requests.request("POST", email_url, headers=headers, files=files)
         response_json = response.text
-        print ('------mail response', response_json)
+        print('------mail response', response_json)
     except Exception as e:
         raise
         print(str(e))
-
-    # destination_file = 'E:/git/my_try/shepherd-api/Rating_details.csv'
+    # destination_dir = os.getcwd()
+    # print(destination_dir)
+    # destination_file = destination_dir + "/" + ratings_file_name
+    # print(destination_file)
     # if os.path.isfile(ratings_file_name):
     #     shutil.copyfile(ratings_file_name, destination_file)
     #     print("File copied successfully!")
+
 
 
 if __name__ == "__main__":
