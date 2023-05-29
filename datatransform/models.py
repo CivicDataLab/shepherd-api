@@ -10,7 +10,11 @@ class Pipeline(models.Model):
     output_id      = models.CharField(max_length=200, default="")
     created_at     = models.DateTimeField(default=datetime.datetime.now) 
     status         = models.CharField(max_length=50)
-    resultant_res_id = models.CharField(max_length=50)
+    dataset_id     = models.CharField(max_length=50)
+    resource_identifier    = models.CharField(max_length=50, null=True)
+    db_action = models.CharField(max_length=50, null=True)
+    err_msg = models.CharField(max_length=200, null=True)
+    resultant_res_id = models.CharField(max_length=20, null=True)
     # tasks = list()
 
 class Task(models.Model):
@@ -23,8 +27,5 @@ class Task(models.Model):
     result_url     = models.CharField(max_length=500)
     Pipeline_id    = models.ForeignKey(Pipeline, on_delete=models.CASCADE)
     output_id      = models.CharField(max_length=200, default="")
-
-    
-
 
 

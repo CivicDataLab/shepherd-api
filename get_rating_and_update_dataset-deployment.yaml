@@ -1,0 +1,171 @@
+###
+### A complete description of a Prefect Deployment for flow 'get-rating-and-update-dataset'
+###
+name: rate_hvd
+description: null
+version: 3549e35bd92594724101e2940d3ed8eb
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+tags:
+- dev
+parameters: {}
+schedule: null
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: get-rating-and-update-dataset
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command:
+  - python
+  - -m
+  - prefect.engine
+  stream_output: true
+  _block_document_id: 4e63e2fe-761c-4f31-be43-d787ecd57999
+  _block_document_name: anonymous-f38b4e87-4e72-45fd-af41-4754df44a043
+  _is_anonymous: true
+storage: null
+path: /code
+entrypoint: hvd_rating/rate_high_value_dataset.py:get_rating_and_update_dataset
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    params_json:
+      title: params_json
+      default:
+        update_frequency:
+          weight: 0.16
+          params:
+            onetime: 2.5
+            yearly: 5
+            monthly: 7.5
+            daily: 10
+        average_rating:
+          weight: 0.16
+          params:
+            '0': 0
+            '1': 2
+            '2': 4
+            '3': 6
+            '4': 8
+            '5': 10
+        formats:
+          weight: 0.16
+          params:
+            csv:
+              weight: 1
+              params:
+                '0': 0
+                '70': 7
+                '10': 1
+                '50': 5
+                '40': 4
+                '30': 3
+                '80': 8
+                '90': 9
+                '60': 6
+                '20': 2
+                '100': 10
+            json:
+              weight: 0.5
+              params:
+                '100': 10
+                '90': 9
+                '80': 8
+                '70': 7
+                '60': 6
+                '50': 5
+                '40': 4
+                '30': 3
+                '20': 2
+                '10': 1
+                '0': 0
+            xml:
+              weight: 0.25
+              params:
+                '100': 10
+                '90': 9
+                '80': 8
+                '70': 7
+                '60': 6
+                '50': 5
+                '40': 4
+                '30': 3
+                '20': 2
+                '10': 1
+                '0': 0
+            pdf:
+              weight: 0.1
+              params:
+                '100': 10
+                '90': 9
+                '80': 8
+                '70': 7
+                '60': 6
+                '50': 5
+                '40': 4
+                '30': 3
+                '20': 2
+                '10': 1
+                '0': 0
+        user_interaction:
+          weight: 0.16
+          params:
+            '0': 0
+            '1': 1
+            '2': 2
+            '3': 3
+            '4': 4
+            '5': 5
+            '6': 6
+            '7': 7
+            '8': 8
+            '9': 9
+            '10': 10
+        downloads:
+          weight: 0.16
+          params:
+            '0': 0
+            '5': 0.5
+            '10': 1
+            '15': 1.5
+            '20': 2
+            '25': 2.5
+            '30': 3
+            '35': 3.5
+            '40': 4
+            '45': 4.5
+            '50': 5
+            '55': 5.5
+            '60': 6
+            '65': 6.5
+            '70': 7
+            '75': 7.5
+            '80': 8
+            '85': 8.5
+            '90': 9
+            '95': 9.5
+            '100': 10
+        downloads_per_month:
+          weight: 0.16
+          params:
+            '0': 0
+            '10': 1
+            '20': 2
+            '30': 3
+            '40': 4
+            '50': 5
+            '60': 6
+            '70': 7
+            '80': 8
+            '90': 9
+            '100': 10
+  required: null
+  definitions: null

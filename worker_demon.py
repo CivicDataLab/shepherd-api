@@ -2,11 +2,16 @@ import json
 import os
 import sys
 
-import django
 import pika
-# from pipeline.model_to_pipeline import *
+from configparser import ConfigParser
+import os
+
 import log_utils
 
+config = ConfigParser()
+
+config.read("config.ini")
+rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RABBIT_MQ_HOST"))
 print ('inside ----')
 try:
     from pipeline.model_to_pipeline import *
@@ -17,13 +22,9 @@ except Exception as e:
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     print(exc_type, fname, exc_tb.tb_lineno)
     print ('exception ----',e)
-    
-
-# pipeline_object = Pipeline.objects.get(pk=196)
-# print(pipeline_object.pipeline_name)
 
 def main():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbit_mq_host))
     channel = connection.channel()
 
     channel.queue_declare(queue='pipeline_ui_queue')
@@ -33,14 +34,18 @@ def main():
         print("Recieved..", body_json)
         p_id = body_json['p_id']
         logger = log_utils.get_logger_for_existing_file(p_id)
+        logger.info(f"INFO: Rabbit mq worker received {body_json}")
         temp_file_name = body_json['temp_file_name']
+        res_details = body_json['res_details']
+        db_action = body_json['db_action']
+        file_format = body_json['file_format']
         try:
-            task_executor(p_id, temp_file_name)
+            task_executor(p_id, temp_file_name, res_details, db_action, file_format)
         except Exception as e:
             logger.error(f"""ERROR: Worker demon failed with an error {str(e)}""")
             print (e)
-        # print("got temp_file name as ", body_json['temp_file_name'])
-        # os.remove('./'+temp_file_name)
+        logger.info(f"INFO: Worker finished successfully")
+        logger.handlers.clear()
         print(" [x] Done")
         logger.info(f"""INFO: Worker demon finished successfully """)
         ch.basic_ack(delivery_tag=method.delivery_tag)

@@ -15,9 +15,10 @@ class Pipeline(object):
     def __init__(self, model: models.Pipeline, data: pd.DataFrame):
         self.model = model
         self.data = data
-        self._commands = list()
-        self.schema = list()
-        self.logger = log_utils.get_logger_for_existing_file(self.model.pipeline_id)
+        self._commands = list()  # these are tasks of the pipeline
+        self.schema = list()  # schema of the resource
+        self.logger = log_utils.get_logger_for_existing_file(self.model.pipeline_id)  # logger of the current pipeline
+        self.merge_flag = False
 
     def add(self, tasks):
         self._commands.append(tasks)

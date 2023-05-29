@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "dataplatform.middleware.SimpleMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -89,13 +91,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dataplatform.wsgi.application'
 
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'my_cache_table',
+    }
+}
+
+
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": os.environ.get('DB_ENGINE', "django.db.backends.sqlite3"),
+        "NAME": os.environ.get('DB_NAME', BASE_DIR / "db.sqlite3"),
+        "USER": os.environ.get('DB_USER', "DB_USER"),
+        "PASSWORD": os.environ.get('DB_PASSWORD', 'DB_PASSWORD'),
+        "HOST": os.environ.get('DB_HOST', 'DB_HOST'),
+        "PORT":os.environ.get('DB_PORT', 'DB_PORT'), 
+        
     }
 }
 
@@ -119,6 +134,18 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+# security headers 
+# SECURE_BROWSER_XSS_FILTER = True  
+# SECURE_HSTS_SECONDS = 31536000 
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True 
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') 
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+
+
+MAX_ATTEMPTS = 1
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 

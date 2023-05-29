@@ -1,0 +1,2 @@
+This folder is used by change_format task to create the files of formats - .xml, .json and .pdf.
+Once the task is completed, the files are deleted and hence it will be usually empty.
