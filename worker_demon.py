@@ -14,9 +14,13 @@ config.read("config.ini")
 rabbit_mq_host = os.environ.get('RABBIT_MQ_HOST', config.get("datapipeline", "RABBIT_MQ_HOST"))
 print ('inside ----')
 try:
-    from pipeline.model_to_pipeline import * 
+    from pipeline.model_to_pipeline import *
     pass
 except Exception as e:
+    #raise e
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fname, exc_tb.tb_lineno)
     print ('exception ----',e)
 
 def main():
@@ -38,10 +42,12 @@ def main():
         try:
             task_executor(p_id, temp_file_name, res_details, db_action, file_format)
         except Exception as e:
+            logger.error(f"""ERROR: Worker demon failed with an error {str(e)}""")
             print (e)
         logger.info(f"INFO: Worker finished successfully")
         logger.handlers.clear()
         print(" [x] Done")
+        logger.info(f"""INFO: Worker demon finished successfully """)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_qos(prefetch_count=1)

@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pika
 
-from tasks.scripts.s3_utils import upload_result
+#from tasks.scripts.s3_utils import upload_result
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -37,7 +37,8 @@ def on_request(ch, method, props, body):
     # send the worker-alive message if the request message is -> get-ack
     if body.decode('utf-8') == 'get-ack':
         print("inside if..")
-        ch.basic_publish(exchange="",routing_key=props.reply_to,
+        ch.basic_publish(exchange="",
+                         routing_key=props.reply_to,
                          properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
                          body='worker alive'.encode("utf-8"))
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -52,12 +53,9 @@ def on_request(ch, method, props, body):
                 response_msg = response.to_csv()
             else:
                 response_msg = response
-            with open("skip_column_result", "wb") as f:
-                print(response_msg)
-                print(type(response_msg))
-                f.write(response_msg.encode('utf-8'))
-                s3_link = upload_result("skip_column_result")
-            response_msg = s3_link
+            # with open("skip_column_result", "wb") as f:
+            #     f.write(str(response_msg.text))
+            #     s3_link = upload_result("skip_column_result")
             ch.basic_publish(exchange="",
                              routing_key=props.reply_to,
                              properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),

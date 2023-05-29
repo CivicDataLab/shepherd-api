@@ -321,7 +321,6 @@ def pipe_update(request, username = None):
 
 def read_data(data_url):
     all_data = pd.read_csv(data_url)
-    all_data.fillna(value="", inplace=True)
 
     return all_data
 

@@ -1,3 +1,10 @@
+"""
+Each task is nothing but a publisher. These tasks go on publishing the pipeline tasks one by
+one in the given order and receive the data back from the workers.
+Python specific operations - like updating the pipeline data, schema etc. are the responsibilities of prefect tasks.
+Actual tasks can be found under tasks/scripts which can be implemented in any language of choice.
+"""
+
 import os
 import random
 import re
@@ -8,6 +15,7 @@ from json2xml import json2xml
 from pandas.io.json import build_table_schema
 from prefect import task, flow
 from task_utils import *
+from io import StringIO
 
 
 @task
@@ -283,6 +291,32 @@ def query_data_resource(context, pipeline, task_obj):
     pipeline.data = final_df
     set_task_model_values(task_obj, pipeline)
 
+@task
+def fill_missing_fields(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
+        print(data, "???")
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at fill_missing_fields""")
+
+
+@task
+def sample_scraper(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
+        print("HERE IS S3 LINK------", data)
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at sample_scraper""")
+
+@task
+def db_loader(context, pipeline, task_obj):
+    # data = pipeline.data.to_json()
+    print(pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:
+        print("data loaded in db")
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at db_loader""")
 
 @flow
 def pipeline_executor(pipeline):
@@ -315,5 +349,4 @@ def pipeline_executor(pipeline):
         pipeline.logger.info(f"INFO: All tasks were successful, setting pipeline status to Done")
     pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
     print("Data after pipeline execution\n", pipeline.data)
-    pipeline.model.save()
     return
