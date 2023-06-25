@@ -321,7 +321,7 @@ def api_resource_query_task(
                 errors.append(
                     {
                         "Success": False,
-                        "error": "requested columns not found in data header",
+                        "error": "requested columns not found in data header ",
                     }
                 )
             else:
